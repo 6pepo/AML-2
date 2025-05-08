@@ -1,7 +1,7 @@
 import numpy as np
 import time as clock
 import matplotlib.pyplot as plt
-import RF_Library as RF
+# import RF_Library as RF
 
 import multiprocessing as mp
 import os
@@ -22,8 +22,7 @@ def worker(input, output):
 
 def calculate(func, args):
     result = func(*args)
-    return '%s says that %s%s = %s' % \
-        (mp.current_process().name, func.__name__, args, result)
+    return '{s} says that {s}{s} = {s}'.format(mp.current_process().name, func.__name__, args, result)
 
 #
 # Functions referenced by tasks
@@ -43,6 +42,7 @@ def plus(a, b):
 
 def test():
     NUMBER_OF_PROCESSES = 4
+    print(__name__)
     TASKS1 = [(mul, (i, 7)) for i in range(20)]
     TASKS2 = [(plus, (i, 8)) for i in range(10)]
 
@@ -81,12 +81,9 @@ if __name__ == '__main__':
 
     tot_cpu = mp.cpu_count()
     print("Total number of cpu: {}".format(tot_cpu))
-    available_cpu = os.cpu_count()
-    print("Available number of cpu: {}".format(available_cpu))
-    # test()
+    # available_cpu = os.cpu_count()
+    # print("Available number of cpu: {}".format(available_cpu))
+    test()
 
-    
-    mat = ((19, 4),(3, 18))
-    figCM, axCM = RF.confMat_binary_plot(mat)
 
     plt.show()
