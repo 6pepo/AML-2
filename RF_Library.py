@@ -380,7 +380,7 @@ def plot_histo_gaus_stat(dist1, label1, dist2, label2):
 
     return fig, ax, stat_res
 
-def torch_eig(mat):
+def torch_eig(mat, var_type):
     if torch.cuda.is_available():
         device = torch.device('cuda')
     elif torch.backends.mps.is_available():
@@ -389,7 +389,7 @@ def torch_eig(mat):
         device = torch.device('cpu')
     print('Torch Device: ', device.type)
 
-    torch_mat = torch.from_numpy(mat).to(device, dtype=torch.float32)
+    torch_mat = torch.from_numpy(mat).to(device, dtype=var_type)
 
     e_val, e_vec = torch.linalg.eigh(torch_mat)
 
