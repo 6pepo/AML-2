@@ -13,6 +13,9 @@ start_cpu = clock.process_time()
 
 # fetch dataset 
 ionosphere = fetch_ucirepo(id=52) 
+
+pc_mat = pd.read_csv("eigenvectors.csv", sep=',', index_col=0)
+pc_mat = pc_mat.to_numpy(dtype=np.complex128)
   
 # data (as pandas dataframes) 
 x = ionosphere.data.features 
@@ -23,8 +26,13 @@ for i,rows in enumerate(x.values):
     for k in range(0,len(rows)-1, 2):
         signal[i,k//2] = rows[k] + 1j*rows[k+1]
 
+print('Pre PCA:', signal.shape)
+
 # signal = x.to_numpy()
+signal = signal.dot(pc_mat)
 labels = y.to_numpy().ravel()
+
+print('Post PCA', signal.shape)
 
 tree_range = range(100,401,100)
 k_range = range(2,11,3)
@@ -53,19 +61,19 @@ specificity = res['Spec List']
 specificity_std = res['Spec Std List']
 
 
-if not os.path.exists(f'{n_seed} Random Seeds Not PCA'):
-        os.makedirs(f'{n_seed} Random Seeds Not PCA')
+if not os.path.exists(f'{n_seed} Random Seeds PCA'):
+        os.makedirs(f'{n_seed} Random Seeds PCA')
 
 fig, ax = plt.subplots(1,2, figsize=(16,9))
 norm = colors.Normalize(vmin = 0, vmax = np.max(np.concatenate((sensitivity,specificity),axis=0)))
 sens_colormesh = RF.heatmap_plotter(ax[0], x=k_range, y=tree_range, array=sensitivity, title="Sensitivity", norm=norm )
 spec_colormesh = RF.heatmap_plotter(ax[1], x=k_range, y=tree_range, array=specificity, title="Specificity", norm=norm )
 fig.colorbar(spec_colormesh,  orientation='vertical')
-fig.savefig(f'{n_seed} Random Seeds Not PCA/heatmaps.png', dpi=120)
+fig.savefig(f'{n_seed} Random Seeds PCA/heatmaps.png', dpi=120)
 
 fig1, ax1 = plt.subplots(figsize=(16,9))
 bin_vals, bins, _ = ax1.hist(indexes.ravel(), bins=len(signal), color='red', edgecolor='black')
-fig1.savefig(f'{n_seed} Random Seeds Not PCA/picked_indexes_distributions.png', dpi=120)
+fig1.savefig(f'{n_seed} Random Seeds PCA/picked_indexes_distributions.png', dpi=120)
 
 
 for i,k in enumerate(k_range):
@@ -86,6 +94,6 @@ for i,k in enumerate(k_range):
     ax2[1].set_xlabel('Number of Trees')
     fig2.suptitle(f'{k} Folds')
 
-    fig2.savefig(f'{n_seed} Random Seeds Not PCA/{k}_folds.png', dpi=120)
+    fig2.savefig(f'{n_seed} Random Seeds PCA/{k}_folds.png', dpi=120)
 
 plt.show()
