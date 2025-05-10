@@ -15,28 +15,30 @@ ionosphere = fetch_ucirepo(id=52)
 x = ionosphere.data.features 
 y = ionosphere.data.targets 
 
-signal = np.zeros((x.shape[0], x.shape[1]//2), dtype=np.complex128)
+# signal = np.zeros((x.shape[0], x.shape[1]//2), dtype=np.complex128)
 
-for i,rows in enumerate(x.values):
-    for k in range(0,len(rows)-1, 2):
-        signal[i,k//2] = rows[k] + 1j*rows[k+1]
+# for i,rows in enumerate(x.values):
+#     for k in range(0,len(rows)-1, 2):
+#         signal[i,k//2] = rows[k] + 1j*rows[k+1]
 
-y = y.to_numpy()
+signal = x.to_numpy()
+labels = y.to_numpy().ravel()
 
+print(signal)
 
-fig, ax = plt.subplots(1,2)
-ax[0].plot(signal[0].real, label=f'{y[0]} Real Part')
-ax[0].plot(signal[0].imag, label=f'{y[0]} Imaginary Part')
-ax[0].grid(True)
-ax[0].legend()
+# fig, ax = plt.subplots(1,2)
+# ax[0].plot(signal[0].real, label=f'{labels[0]} Real Part')
+# ax[0].plot(signal[0].imag, label=f'{labels[0]} Imaginary Part')
+# ax[0].grid(True)
+# ax[0].legend()
 
-ax[1].plot(signal[1].real, label=f'{y[1]} Real Part')
-ax[1].plot(signal[1].imag, label=f'{y[1]} Imaginary Part')
-ax[1].grid(True)
-ax[1].legend()
+# ax[1].plot(signal[1].real, label=f'{labels[1]} Real Part')
+# ax[1].plot(signal[1].imag, label=f'{labels[1]} Imaginary Part')
+# ax[1].grid(True)
+# ax[1].legend()
 
 corr = np.corrcoef(signal, rowvar=False)
-e_val, e_vec = RF.torch_eig(corr, var_type=torch.complex128)
+e_val, e_vec = RF.torch_eig(corr)  #var_type=torch.complex128)
 
 sort_index = np.argsort(np.abs(e_val))[::-1]       
 e_val = e_val[sort_index]

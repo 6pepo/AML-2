@@ -262,9 +262,11 @@ def RF_binary_scanner_random_pick(tree_range, k_range, n_seeds, dataset, dataset
     tot_iter = len_tree*len_k*n_seeds
     progress = tqdm(total=tot_iter)
     iter = 0
+    indexes = []
 
     for i in range(n_seeds):
         random_indexes = np.random.choice(range(0,len(dataset)), size=pick_numb, replace=False)
+        indexes.append(random_indexes)
         patterns = dataset[random_indexes]
         labels = dataset_labels[random_indexes]
 
@@ -296,7 +298,7 @@ def RF_binary_scanner_random_pick(tree_range, k_range, n_seeds, dataset, dataset
         'Spec Std List': np.std(specificity_list, axis=2)
     }
 
-    return res
+    return res, np.asarray(indexes)
 
 
 def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=None, precision=None, title=None):
@@ -395,12 +397,6 @@ def check_var(sig1,sig2):
         return False
 
 def plot_histo_gaus_stat(dist1, label1, dist2, label2):
-    # root = tk.Tk()
-    # screen_width = root.winfo_screenwidth()
-    # screen_height = root.winfo_screenheight()
-    # root.destroy() 
-
-    # fig, ax = plt.subplots(figsize=(screen_width / 100, screen_height / 100))
     fig, ax = plt.subplots()
     bin_vals1, bins1, _ = ax.hist(dist1, bins='auto', alpha = 0.5, color='red', label = label1)
     bin_vals2, bins2, _ = ax.hist(dist2, bins='auto', alpha = 0.5, color='blue', label = label2)
@@ -430,16 +426,16 @@ def plot_histo_gaus_stat(dist1, label1, dist2, label2):
 
     return fig, ax, stat_res
 
-def torch_eig(mat, var_type):
+def torch_eig(mat):
     if torch.cuda.is_available():
         device = torch.device('cuda')
-    elif torch.backends.mps.is_available():
-        device = torch.device('mps')
+    # elif torch.backends.mps.is_available():
+    #     device = torch.device('mps')
     else:
         device = torch.device('cpu')
     print('Torch Device: ', device.type)
 
-    torch_mat = torch.from_numpy(mat).to(device, dtype=var_type)
+    torch_mat = torch.from_numpy(mat).to(device, dtype=torch.float32)
 
     e_val, e_vec = torch.linalg.eig(torch_mat)
 
