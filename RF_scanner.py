@@ -1,117 +1,92 @@
-import numpy as np
 import matplotlib.pyplot as plt
-import time as clock
-
-from matplotlib import cm, colors
-from matplotlib.widgets import Slider
-from scipy.io import loadmat
-
+import pandas as pd
+import numpy as np
 import RF_Library as RF
+import time as clock
+import torch
+import os
 
-start = clock.time()
+from ucimlrepo import fetch_ucirepo 
+from matplotlib import cm, colors
+  
+start_cpu = clock.process_time()
 
-path_file = "signal__b.mat"
+# fetch dataset 
+ionosphere = fetch_ucirepo(id=52) 
+  
+# data (as pandas dataframes) 
+x = ionosphere.data.features 
+y = ionosphere.data.targets 
 
-data = loadmat(path_file)
+signal = np.zeros((x.shape[0], x.shape[1]//2), dtype=np.complex128)
+for i,rows in enumerate(x.values):
+    for k in range(0,len(rows)-1, 2):
+        signal[i,k//2] = rows[k] + 1j*rows[k+1]
 
-g0 = data['g__0']
-g1 = data['g__1']
-tot_pattern = np.concatenate((g0, g1), axis=0)
+# signal = x.to_numpy()
+labels = y.to_numpy().ravel()
 
+tree_range = range(100,401,10)
+k_range = range(2,11,1)
+n_seed = 100
 
-Nneg = len(g0[:, 0])
-Npos = len(g1[:, 0])
+label0 = 'b'
+label1 = 'g'
 
-label0 = 'NEGATIVI'
-label1 = 'POSITIVI'
-g0_labels = np.full(Nneg, label0)
-g1_labels = np.full(Npos, label1)
-tot_labels = np.concatenate((g0_labels, g1_labels), axis=0)
+good = 0
+bad = 0
 
-tree_range = range(10, 410, 10)
+for l in labels:
+    if l == label1:
+        good += 1
+    if l == label0:
+        bad += 1
 
-k_range = range(2, 11, 1)
+print('Good signals:', good)
+print('Bad signals:', bad)
 
-n_seeds = 100
+res, indexes = RF.RF_binary_scanner_random_pick(tree_range, k_range, n_seed, np.abs(signal), labels, label0, label1, pick_numb=len(signal)//3)
 
-res = RF.RF_binary_scanner(tree_range, k_range, n_seeds, tot_pattern, tot_labels, label0, label1)
-
-# Single n_fold plot with slider
-fig, ax = plt.subplots(3, 1, sharex=True)
-fig.subplots_adjust(0.2, 0.2)
-
-ax[0].scatter(tree_range, res['Acc List'][:, 0], color='C0')
-ax[0].errorbar(tree_range, res['Acc List'][:, 0], yerr=res['Acc Std List'][:, 0], color='C0')
-ax[0].grid(True)
-ax[0].set_ylim(0, 1)
-ax[0].set_title('Accuracy')
-
-ax[1].scatter(tree_range, res['Sens List'][:, 0], color='C1')
-ax[1].errorbar(tree_range, res['Sens List'][:, 0], yerr=res['Sens Std List'][:, 0], color='C1')
-ax[1].grid(True)
-ax[1].set_ylim(0, 1)
-ax[1].set_title('Sensitivity')
-
-ax[2].scatter(tree_range, res['Spec List'][:, 0], color='C2')
-ax[2].errorbar(tree_range, res['Spec List'][:, 0], yerr=res['Spec Std List'][:, 0], color='C2')
-ax[2].grid(True)
-ax[2].set_ylim(0, 1)
-ax[2].set_title('Specificity')
-
-ax[2].set_xlabel('Number of Trees')
-
-axSlide = fig.add_axes([0.075, 0.2, 0.05, 0.7])
-kSlide = Slider(ax = axSlide, label = "Number of folds", valmin=k_range[0], valmax=k_range[-1], valstep = 1, valinit=k_range[0], orientation='vertical')
-
-def update(val):
-    i = k_range.index(kSlide.val)
-    ax[0].clear()
-    ax[0].scatter(tree_range, res['Acc List'][:, i], color='C0')
-    ax[0].errorbar(tree_range, res['Acc List'][:, i], yerr=res['Acc Std List'][:, i], color='C0')
-    ax[0].grid(True)
-    ax[0].set_ylim(0, 1)
-    ax[0].set_title('Accuracy')
-
-    ax[1].clear()
-    ax[1].scatter(tree_range, res['Sens List'][:, i], color='C1')
-    ax[1].errorbar(tree_range, res['Sens List'][:, i], yerr=res['Sens Std List'][:, i], color='C1')
-    ax[1].grid(True)
-    ax[1].set_ylim(0, 1)
-    ax[1].set_title('Sensitivity')
-
-    ax[2].clear()
-    ax[2].scatter(tree_range, res['Spec List'][:, i], color='C2')
-    ax[2].errorbar(tree_range, res['Spec List'][:, i], yerr=res['Spec Std List'][:, i], color='C2')
-    ax[2].grid(True)
-    ax[2].set_ylim(0, 1)
-    ax[2].set_title('Specificity')
-    ax[2].set_xlabel('Number of Trees')
-
-    fig.canvas.draw_idle()
-
-kSlide.on_changed(update)
-
-# Heatmaps n_fold - n_trees
-fig3d = plt.figure()
-
-X, Y = np.meshgrid(k_range, tree_range)
-
-scores = np.concatenate((res['Acc List'], res['Sens List'], res['Spec List']), axis = 0)
-normalization = colors.Normalize(vmin=np.min(scores), vmax=np.max(scores))
-
-ax_acc = fig3d.add_subplot(131)
-RF.heatmap_plotter(ax_acc, k_range, tree_range, res['Acc List'], "Accuracy", normalization, cm.viridis)
-
-ax_sens = fig3d.add_subplot(132)
-# ax_sens = fig3d.add_subplot(121)
-RF.heatmap_plotter(ax_sens, k_range, tree_range, res['Sens List'], "Sensitivity", normalization, cm.viridis)
-
-ax_spec = fig3d.add_subplot(133)
-# ax_spec = fig3d.add_subplot(122)
-colormesh = RF.heatmap_plotter(ax_spec, k_range, tree_range, res['Spec List'], "Specificity", normalization, cm.viridis)
+sensitivity = res['Sens List']
+sensitivity_std = res['Sens Std List']
+specificity = res['Spec List']
+specificity_std = res['Spec Std List']
 
 
-fig3d.colorbar(colormesh,  orientation='vertical')
+if not os.path.exists(f'{n_seed} Random Seeds Not PCA'):
+        os.makedirs(f'{n_seed} Random Seeds Not PCA')
 
-print("Tempo:" + str(round((clock.time() - start)/60)) + "'" + str(round((clock.time() - start)%60)) + "''")
+fig, ax = plt.subplots(1,2, figsize=(16,9))
+norm = colors.Normalize(vmin = 0, vmax = np.max(np.concatenate((sensitivity,specificity),axis=0)))
+sens_colormesh = RF.heatmap_plotter(ax[0], x=k_range, y=tree_range, array=sensitivity, title="Sensitivity", norm=norm )
+spec_colormesh = RF.heatmap_plotter(ax[1], x=k_range, y=tree_range, array=specificity, title="Specificity", norm=norm )
+fig.colorbar(spec_colormesh,  orientation='vertical')
+fig.savefig(f'{n_seed} Random Seeds Not PCA/heatmaps.png', dpi=120)
+
+fig1, ax1 = plt.subplots(figsize=(16,9))
+bin_vals, bins, _ = ax1.hist(indexes.ravel(), bins=len(signal), color='red', edgecolor='black')
+fig1.savefig(f'{n_seed} Random Seeds Not PCA/picked_indexes_distributions.png', dpi=120)
+
+
+for i,k in enumerate(k_range):
+    fig2, ax2 = plt.subplots(2, 1, sharex=True, figsize=(16,9))
+    fig.subplots_adjust(0.2, 0.2)
+    ax2[0].scatter(tree_range, sensitivity[:, i], color='C1')
+    ax2[0].errorbar(tree_range, sensitivity[:, i], yerr=sensitivity_std[:, i], color='C1')
+    ax2[0].grid(True)
+    ax2[0].set_ylim(0, 1.1)
+    ax2[0].set_title('Sensitivity')
+
+    ax2[1].scatter(tree_range, specificity[:, i], color='C2')
+    ax2[1].errorbar(tree_range, specificity[:, i], yerr=specificity_std[:, i], color='C2')
+    ax2[1].grid(True)
+    ax2[1].set_ylim(0, 1.1)
+    ax2[1].set_title('Specificity')
+
+    ax2[1].set_xlabel('Number of Trees')
+    fig2.suptitle(f'{k} Folds')
+
+    fig2.savefig(f'{n_seed} Random Seeds Not PCA/{k}_folds.png', dpi=120)
+
+print("CPU Time:" + str(round((clock.process_time() - start_cpu)/60)) + "'" + str(round((clock.process_time() - start_cpu)%60)) + "''")
 plt.show()
