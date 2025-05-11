@@ -26,9 +26,9 @@ for i,rows in enumerate(x.values):
 # signal = x.to_numpy()
 labels = y.to_numpy().ravel()
 
-tree_range = range(100,401,100)
-k_range = range(2,11,3)
-n_seed = 3
+tree_range = range(100,401,10)
+k_range = range(2,11,1)
+n_seed = 100
 
 label0 = 'b'
 label1 = 'g'
@@ -88,4 +88,5 @@ for i,k in enumerate(k_range):
 
     fig2.savefig(f'{n_seed} Random Seeds Not PCA/{k}_folds.png', dpi=120)
 
+print("CPU Time:" + str(round((clock.process_time() - start_cpu)/60)) + "'" + str(round((clock.process_time() - start_cpu)%60)) + "''")
 plt.show()
