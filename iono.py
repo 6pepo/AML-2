@@ -13,6 +13,23 @@ y = ionosphere.data.targets
 x = x.to_numpy()
 y = y.to_numpy()
 
+
+# Mask per ciascuna label
+mask_good = y == 'g'
+# Trova gli indici dove y è 'g' o 'b'
+idx_good = np.where(y == 'g')[0]
+idx_bad = np.where(y == 'b')[0]
+
+# Usa gli indici per estrarre da x
+x_good = x[idx_good]
+x_bad = x[idx_bad]
+
+#print(len(x), len(x_good), len(x_bad))
+
+print("x_good:", x_good)
+print("x_bad:", x_bad)
+
+
 print('Type x:', type(x))
 print('Type y:', type(y))
 print(x)
@@ -23,8 +40,6 @@ ax.plot(x[0], 'b', label=y[0])
 ax.plot(x[1], 'r', label=y[1])
 plt.legend()
 
-
-  
 # metadata 
 print('Metadata:\n', ionosphere.metadata) 
   
