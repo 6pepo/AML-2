@@ -22,7 +22,7 @@ def worker(input, output):
 
 def calculate(func, args):
     result = func(*args)
-    return '{s} says that {s}{s} = {s}'.format(mp.current_process().name, func.__name__, args, result)
+    return '{} says that {}{} = {}'.format(mp.current_process().name, func.__name__, args, result)
 
 #
 # Functions referenced by tasks
@@ -75,7 +75,7 @@ def test():
     for i in range(NUMBER_OF_PROCESSES):
         task_queue.put('STOP')
 
-
+print(__name__)
 if __name__ == '__main__':
     mp.freeze_support()
 

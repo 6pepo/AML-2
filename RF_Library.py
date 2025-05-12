@@ -2,18 +2,17 @@ import numpy as np
 import sklearn.ensemble as ens
 import matplotlib.pyplot as plt
 import matplotlib.table as tab
-# import tkinter as tk
 import torch
 import multiprocessing as mp
 import os
 import time as clock
 
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 from scipy.optimize import curve_fit
 from scipy.stats import ttest_ind
 from matplotlib import cm, colors
 from matplotlib.ticker import MaxNLocator
-# from tqdm import tqdm
+from tqdm import tqdm
 
 def RF_binary_kfold(n_trees, k, patterns, labels, label0, label1, iter = 0, ext_patt = None, ext_lab = None):
     start = clock.process_time()  
@@ -24,8 +23,8 @@ def RF_binary_kfold(n_trees, k, patterns, labels, label0, label1, iter = 0, ext_
     fold_sensitivity = []
     fold_specificity = []
 
-    kf = KFold(n_splits = k, shuffle = True)
-    indices = kf.split(labels)
+    kf = StratifiedKFold(n_splits = k, shuffle = True)
+    indices = kf.split(patterns, labels)
 
     if np.any(ext_lab != None):
         vote_1_ext = np.zeros(len(ext_lab))
@@ -217,7 +216,9 @@ def worker(input, output):
         output.put(result)
 
 def RF_binary_scanner(tree_range, k_range, n_seeds, patterns, labels, label0, label1, ext_patt = None, ext_lab = None):
-    if __name__ == '__main__':
+    if __name__ == 'RF_Library':
+        mp.freeze_support()
+
         len_tree = len(tree_range)
         len_k = len(k_range)
 
@@ -231,34 +232,31 @@ def RF_binary_scanner(tree_range, k_range, n_seeds, patterns, labels, label0, la
         tot_iter = len_tree*len_k*n_seeds
 
         NUMBER_OF_PROCESSES = os.cpu_count()
-
-        tasks = [(RF_binary_kfold, (i, j, k, patterns, labels, label0, label1)) for i,j,k in tree_range, k_range, range(n_seeds)]
-
+        
         task_queue = mp.Queue()
         done_queue = mp.Queue()
 
-        for task in tasks:
-            task_queue.put(task)
+        print("Preparing Tasks...")
+        for a in tree_range:
+            for b in k_range:
+                for c in range(n_seeds):
+                    task_queue.put((RF_binary_kfold, (a, b, patterns, labels, label0, label1, c)))
 
         for i in range(NUMBER_OF_PROCESSES):
             mp.Process(target=worker, args=(task_queue, done_queue)).start()
 
+        progress = tqdm(total = tot_iter)
+        progress.set_description("Executing Tasks")
+
         for i in range(tot_iter):
             res = done_queue.get()
-            accuracy_list[res['n trees'], res['k'], res['n seed']] = res['Acc']
-            sensitivity_list[res['n trees'], res['k'], res['n seed']] = res['Sens']
-            specificity_list[res['n trees'], res['k'], res['n seed']] = res['Spec']
+            accuracy_list[tree_range.index(res['n trees']), k_range.index(res['k']), res['n seed']] = res['Acc']
+            sensitivity_list[tree_range.index(res['n trees']), k_range.index(res['k']), res['n seed']] = res['Sens']
+            specificity_list[tree_range.index(res['n trees']), k_range.index(res['k']), res['n seed']] = res['Spec']
+            progress.update(1)
 
-        # progress = tqdm(total=tot_iter)
-        # Progress bar - to be restructured
-        # progress.set_description(f"Trees: {i_trees+1}/{len_tree} | Fold: {i_k+1}/{len_k} | Rand_state: {i+1}/{n_seeds}")
-        # progress.update(1)
-                
-        # print("N_trees: ", n_trees, "\tN_fold: ", k, "\tIteration: ", iter, "/", tot_iter,end='\r')     #Python 3.x
-        # print("N_trees: {}\tN_fold: {}\tIteration: {}/{} \r".format(n_trees, k, iter, tot_iter)),       #Python 2.x
-
-
-                    
+        for i in range(NUMBER_OF_PROCESSES):
+            task_queue.put('STOP')
 
         print("\nFinished Scanning!                                                \n")
 
@@ -271,7 +269,8 @@ def RF_binary_scanner(tree_range, k_range, n_seeds, patterns, labels, label0, la
             'Spec Std List': np.std(specificity_list, axis=2)
         }
 
-    return res
+        return res
+    return 0
 
 def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=None, precision=None, title=None):
     fig, ax = plt.subplots()
