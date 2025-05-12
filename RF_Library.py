@@ -326,7 +326,7 @@ def RF_binary_scanner_random_pick(tree_range, k_range, n_seeds, dataset, dataset
 
 
 def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=None, precision=None, title=None):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(16,9))
     if title == None:
         ax.set_title("Confusion matrix")
     else:
@@ -421,7 +421,7 @@ def check_var(sig1,sig2):
         return False
 
 def plot_histo_gaus_stat(dist1, label1, dist2, label2):
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(16,9))
     bin_vals1, bins1, _ = ax.hist(dist1, bins='auto', alpha = 0.5, color='red', label = label1)
     bin_vals2, bins2, _ = ax.hist(dist2, bins='auto', alpha = 0.5, color='blue', label = label2)
 
