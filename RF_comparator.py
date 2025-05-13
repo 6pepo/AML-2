@@ -18,15 +18,15 @@ if __name__ == '__main__':
 	mp.freeze_support()
 
 	start = clock.time()
-	n_iter = 10
+	n_iter = 100
 
 	# Iperparameters non-PCA
-	k = 4
-	n_trees = 100
+	k = 5
+	n_trees = 200
 
 	# Iperparameters PCA
-	k_PCA = 5
-	n_trees_PCA = 130 
+	k_PCA = 6
+	n_trees_PCA = 120 
 
 	# Training Set
 	train_patterns = pd.read_csv("iono_trainPatt.csv", header=0, index_col=0)
@@ -40,6 +40,9 @@ if __name__ == '__main__':
 	# External test Set
 	ext_patterns = pd.read_csv("iono_extPatt.csv", header=0, index_col=0)
 	ext_labels = pd.read_csv("iono_extLab.csv", header=0, index_col=0)
+
+	ext_patterns = ext_patterns.to_numpy()
+	ext_labels = ext_labels.to_numpy().ravel()
 
 	NUMBER_OF_PROCESSES = int(os.cpu_count()/2)
 			
@@ -162,7 +165,7 @@ if __name__ == '__main__':
 	print("Sensitivity: {:.2%} +- {:.2%} Rel: {:.2%}".format(tot_sens_ext, tot_sens_ext_std, tot_sens_ext_std/tot_sens_ext))
 	print("Specificity: {:.2%} +- {:.2%} Rel: {:.2%}".format(tot_spec_ext, tot_spec_ext_std, tot_spec_ext_std/tot_spec_ext))
 	print("Mean CPU Time for single iteration: {:.2}".format(np.mean(cpu_time_non_pca)))
-	print("Tot CPU Time:" + str((clock.process_time() - start_non_pca)))
+	print("Tot CPU Time:" + str(np.sum(cpu_time_non_pca)))
 	print("\n")
 
 	#da sistemare la figsize e normalizzare le entrate
@@ -211,7 +214,7 @@ if __name__ == '__main__':
 
 	#PCA 
 	pc_mat = pd.read_csv("eigenvectors.csv", sep=',', index_col=0)
-	pc_mat = pc_mat.to_numpy(dtype=np.complex128)
+	pc_mat = pc_mat.to_numpy(dtype=np.float32)
 	feat_counter = np.zeros(len(train_patterns[0]))
 	signal = train_patterns.dot(pc_mat)
 
@@ -323,7 +326,7 @@ if __name__ == '__main__':
 	print("Sensitivity: {:.2%} +- {:.2%} Rel: {:.2%}".format(PCA_sens_ext, PCA_sens_ext_std, PCA_sens_ext_std/PCA_sens_ext))
 	print("Specificity: {:.2%} +- {:.2%} Rel: {:.2%}".format(PCA_spec_ext, PCA_spec_ext_std, PCA_spec_ext_std/PCA_spec_ext))
 	print("Mean CPU Time for single iteration: {:.2}".format(np.mean(cpu_time_pca)))
-	print("Tot CPU Time:" + str((clock.process_time() - start_pca)))
+	print("Tot CPU Time:" + str(np.sum(cpu_time_pca)))
 	print("\n")
 
 	#da sistemare la figsize e normalizzare le entrate

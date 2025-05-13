@@ -114,11 +114,11 @@ def RF_binary_kfold(n_trees, k, patterns, labels, label0, label1, iter = 0, ext_
         for j, pred in enumerate(bacc_predict):
             if pred == label1 and ext_lab[j] == label1:
                 bacc_accuracy += 1./(N1_ext+N0_ext)
-                bacc_specificity += 1./N0_ext
+                bacc_sensitivity += 1./N1_ext
         
             if pred == label0 and ext_lab[j] == label0:
                 bacc_accuracy += 1./(N1_ext+N0_ext)
-                bacc_sensitivity += 1./N1_ext
+                bacc_specificity += 1./N0_ext
 
     # Best Sensitivity
     bsens_model = models[np.argmax(fold_sensitivity)]
@@ -132,11 +132,11 @@ def RF_binary_kfold(n_trees, k, patterns, labels, label0, label1, iter = 0, ext_
         for j, pred in enumerate(bsens_predict):
             if pred == label1 and ext_lab[j] == label1:
                 bsens_accuracy += 1./(N1_ext+N0_ext)
-                bsens_specificity += 1./N0_ext
+                bsens_sensitivity += 1./N1_ext
         
             if pred == label0 and ext_lab[j] == label0:
                 bsens_accuracy += 1./(N1_ext+N0_ext)
-                bsens_sensitivity += 1./N1_ext
+                bsens_specificity += 1./N0_ext
 
     # Best Specificity
     bspec_model = models[np.argmax(fold_specificity)]
@@ -150,11 +150,12 @@ def RF_binary_kfold(n_trees, k, patterns, labels, label0, label1, iter = 0, ext_
         for j, pred in enumerate(bspec_predict):
             if pred == label1 and ext_lab[j] == label1:
                 bspec_accuracy += 1./(N1_ext+N0_ext)
-                bspec_specificity += 1./N0_ext
+                bspec_sensitivity += 1./N1_ext
+
         
             if pred == label0 and ext_lab[j] == label0:
                 bspec_accuracy += 1./(N1_ext+N0_ext)
-                bspec_sensitivity += 1./N1_ext
+                bspec_specificity += 1./N0_ext
 
     # External test: Majority vote
     ext_accuracy = 0.
@@ -272,58 +273,6 @@ def RF_binary_scanner(tree_range, k_range, n_seeds, patterns, labels, label0, la
         return res
     return 0
 
-def RF_binary_scanner_random_pick(tree_range, k_range, n_seeds, dataset, dataset_labels, label0, label1, pick_numb):
-    len_tree = len(tree_range)
-    len_k = len(k_range)
-
-    accuracy_list = np.empty((len_tree, len_k, n_seeds))
-    sensitivity_list = np.empty((len_tree, len_k, n_seeds))
-    specificity_list = np.empty((len_tree, len_k, n_seeds))
-
-    print("Begin Scanning...")
-
-    tot_iter = len_tree*len_k*n_seeds
-    progress = tqdm(total=tot_iter)
-    iter = 0
-    indexes = []
-
-    for i in range(n_seeds):
-        random_indexes = np.random.choice(range(0,len(dataset)), size=pick_numb, replace=False)
-        indexes.append(random_indexes)
-        patterns = dataset[random_indexes]
-        labels = dataset_labels[random_indexes]
-
-        for i_trees, n_trees in enumerate(tree_range):
-            for i_k, k in enumerate(k_range):
-                iter += 1
-                
-                # Progress bar
-                progress.set_description(f"Trees: {i_trees+1}/{len_tree} | Fold: {i_k+1}/{len_k} | Rand_state: {i+1}/{n_seeds}")
-                progress.update(1)
-                
-                # print("N_trees: ", n_trees, "\tN_fold: ", k, "\tIteration: ", iter, "/", tot_iter,end='\r')     #Python 3.x
-                # print("N_trees: {}\tN_fold: {}\tIteration: {}/{} \r".format(n_trees, k, iter, tot_iter)),       #Python 2.x
-
-                res = RF_binary_kfold(n_trees, k, patterns, labels, label0, label1)
-
-                accuracy_list[i_trees, i_k, i] = res['Acc']
-                sensitivity_list[i_trees, i_k, i] = res['Sens']
-                specificity_list[i_trees, i_k, i] = res['Spec']
-
-    print("\nFinished Scanning!                                                \n")
-
-    res = {
-        'Acc List': np.mean(accuracy_list, axis=2),
-        'Acc Std List': np.std(accuracy_list, axis=2),
-        'Sens List': np.mean(sensitivity_list, axis=2),
-        'Sens Std List': np.std(sensitivity_list, axis=2),
-        'Spec List': np.mean(specificity_list, axis=2),
-        'Spec Std List': np.std(specificity_list, axis=2)
-    }
-
-    return res, np.asarray(indexes)
-
-
 def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=None, precision=None, title=None):
     fig, ax = plt.subplots(figsize=(16,9))
     if title == None:
@@ -344,6 +293,10 @@ def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=N
         accuracy = (conf_mat[0][0] + conf_mat[1][1]) / tot
     F1score = 2. * (precision * sensitivity) / (precision + sensitivity)
 
+    for i in range(len(conf_mat)):
+        for j in range(len(conf_mat[0])):
+            conf_mat[i,j] = round(conf_mat[i,j]/tot * 100,2)
+            
     norm = colors.Normalize(vmin = 0, vmax = np.max(conf_mat))
     normalized = norm((0., conf_mat[0][0], conf_mat[0][1], conf_mat[1][0], conf_mat[1][1]))
     cell_color = cm.viridis(normalized)
@@ -418,30 +371,35 @@ def check_var(sig1,sig2):
         return True
     else:
         return False
-
+        
 def plot_histo_gaus_stat(dist1, label1, dist2, label2):
     fig, ax = plt.subplots(figsize=(16,9))
+
     bin_vals1, bins1, _ = ax.hist(dist1, bins='auto', alpha = 0.5, color='red', label = label1)
     bin_vals2, bins2, _ = ax.hist(dist2, bins='auto', alpha = 0.5, color='blue', label = label2)
 
     mask1 = np.where(bin_vals1 != 0)
     bin_centers1 = (bins1[:-1] + bins1[1:])/2
     i_max1 = np.argmax(bin_vals1)
-    par1 = [bin_vals1[i_max1], bin_centers1[i_max1], 0.05]
-    popt1, pcov1 = curve_fit(gaussian, bin_centers1[mask1], bin_vals1[mask1], par1, maxfev=10000)
+    par1 = [bin_vals1[i_max1], bin_centers1[i_max1], np.std(dist1)]
 
     mask2 = np.where(bin_vals2 != 0)
     bin_centers2 = (bins2[:-1] + bins2[1:])/2
     i_max2 = np.argmax(bin_vals2)
-    par2 = [bin_vals2[i_max2], bin_centers2[i_max2], 0.05]
-    popt2, pcov2 = curve_fit(gaussian, bin_centers2[mask2], bin_vals2[mask2], par2, maxfev=10000)
+    par2 = [bin_vals2[i_max2], bin_centers2[i_max2], np.std(dist2)]
     
-    x = np.linspace(np.min(np.concatenate((bins1, bins2))), np.max(np.concatenate((bins1,bins2))), 1000)
-    ax.plot(x, gaussian(x,*popt1), 'r--', label='Gaussian Fit: A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(popt1[0], popt1[1], popt1[2]))
-    ax.plot(x, gaussian(x,*popt2), 'b--', label='Gaussian Fit: A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(popt2[0], popt2[1], popt2[2]))
+    print(f'\nBin1:{len(bin_centers1[mask1])}, Bin2:{len(bin_centers2[mask2])}\n')
+    if len(bin_centers1[mask1]) > 3 and len(bin_centers2[mask2]) > 3:
+        popt1, pcov1 = curve_fit(gaussian, bin_centers1[mask1], bin_vals1[mask1], par1, maxfev=10000)
+        popt2, pcov2 = curve_fit(gaussian, bin_centers2[mask2], bin_vals2[mask2], par2, maxfev=10000)
 
-    stat_res = ttest_ind(dist1, dist2 ,equal_var=check_var(popt1[2], popt2[2]), alternative=hp_mode(popt1[1], popt2[1]))
+        x = np.linspace(np.min(np.concatenate((bins1, bins2))), np.max(np.concatenate((bins1,bins2))), 1000)
+        ax.plot(x, gaussian(x,*popt1), 'r--', label='Gaussian Fit: A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(popt1[0], popt1[1], popt1[2]))
+        ax.plot(x, gaussian(x,*popt2), 'b--', label='Gaussian Fit: A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(popt2[0], popt2[1], popt2[2]))
 
+        stat_res = ttest_ind(dist1, dist2 ,equal_var=check_var(popt1[2], popt2[2]), alternative=hp_mode(popt1[1], popt2[1]))
+    else:
+        stat_res = ttest_ind(dist1, dist2 ,equal_var=check_var(np.var(dist1), np.var(dist2)), alternative=hp_mode(np.mean(dist1), np.mean(dist2)))
 
     ax.plot([],[], marker= None, linestyle='None', label='t-stat: {:.2f}, p-value: {:.2f}'.format(stat_res.statistic, stat_res.pvalue))
 

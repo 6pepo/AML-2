@@ -21,9 +21,9 @@ if __name__ == '__main__':
     label0 = 'b'
     label1 = 'g'
 
-    tree_range = range(10, 201, 10)
+    tree_range = range(10, 410, 100)
 
-    k_range = range(2, 9a, 1)
+    k_range = range(2, 11, 1)
 
     n_seeds = 10
     
