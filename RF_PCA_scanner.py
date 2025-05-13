@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     tree_range = range(10, 201, 10)
 
-    k_range = range(2, 9, 1)
+    k_range = range(2, 9a, 1)
 
     n_seeds = 10
     
