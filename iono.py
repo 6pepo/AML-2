@@ -39,46 +39,36 @@ patterns = x.to_numpy()
 labels = y.to_numpy().ravel()
 print(labels)
 
-# Picking first 40 good and 40 bad patterns for training
-patt_train = np.empty((80, x.shape[1]))
-lab_train = np.full(80, '')
-good = 0
-bad = 0
+# Picking first 50 good and 50 bad patterns for training, the rest is for External Testing
+ntarin = 100
+patt_train = np.empty((ntrain, x.shape[1]))
+lab_train = np.full(ntrain, '')
+good_t = 0
+bad_t = 0
+good_e = 0
+bad_e = 0
 
 for i, lab in enumerate(labels):
-    if lab == 'g' and good < 40:
-        patt_train[good + bad] = patterns[i]
-        lab_train[good + bad] = lab
-        good += 1
-    if lab == 'b' and bad < 40:
-        patt_train[good + bad] = patterns[i]
-        lab_train[good + bad] = lab
-        bad += 1
-    if good == 40 and bad == 40:
-        break
+    if lab == 'g':
+        if good_t < ntrain/2:
+            patt_train[good_t + bad_t] = patterns[i]
+            lab_train[good_t + bad_t] = lab
+            good_t += 1
+        else:
+            patt_ext[good_e + bad_e] = patterns[i]
+            lab_ext[good_e + bad_e] = lab
+            good_e += 1
+    if lab == 'b':
+        if bad_t < ntrain/2:
+            patt_train[good_t + bad_t] = patterns[i]
+            lab_train[good_t + bad_t] = lab
+            bad_t += 1
+        else:
+            patt_ext[good_e + bad_e] = patterns[i]
+            lab_ext[good_e + bad_e] = lab
+            bad_e += 1
 
 patt_train = np.delete(patt_train, 1, axis=1)     # Removes column 1 since it's all 0
-
-# Picking last 10 good and 10 bad patterns for external test
-patt_ext = np.empty((20, x.shape[1]))
-lab_ext = np.full(20, '')
-good = 0
-bad = 0
-i = len(lab) - 1
-
-while True:
-    if labels[i] == 'g' and good < 10:
-        patt_ext[good + bad] = patterns[i]
-        lab_ext[good + bad] = labels[i]
-        good += 1
-    if labels[i] == 'b' and bad < 10:
-        patt_ext[good + bad] = patterns[i]
-        lab_ext[good + bad] = labels[i]
-        bad += 1
-    if good == 10 and bad == 10:
-        break
-    i -= 1
-
 patt_ext = np.delete(patt_ext, 1, axis=1)       # Removes column 1 since it's all 0
 
 corr = np.corrcoef(patt_train, rowvar=False)    # 2x Real Features
