@@ -81,8 +81,8 @@ while True:
 
 patt_ext = np.delete(patt_ext, 1, axis=1)       # Removes column 1 since it's all 0
 
-corr = np.corrcoef(patt_train, rowvar=False)
-corr = np.corrcoef(signal, rowvar=False)
+corr = np.corrcoef(patt_train, rowvar=False)    # 2x Real Features
+# corr = np.corrcoef(signal, rowvar=False)      # Complex Features
 e_val, e_vec = RF.torch_eig(corr, var_type=torch.float64)
 
 sort_index = np.argsort(np.abs(e_val))[::-1]       
@@ -105,7 +105,7 @@ print('Numbers of principal components:', n_vec)
 
 df_corr = pd.DataFrame(data = corr)
 df_eval = pd.DataFrame(data = e_val)
-df_evec = pd.DataFrame(data = e_vec)
+df_evec = pd.DataFrame(data = e_vec[:, :n_vec])
 df_corr.to_csv('corrMatrix.csv', sep = ',')
 df_eval.to_csv('eigenvalues.csv', sep = ',')
 df_evec.to_csv('eigenvectors.csv', sep = ',')

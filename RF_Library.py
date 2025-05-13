@@ -258,7 +258,7 @@ def RF_binary_scanner(tree_range, k_range, n_seeds, patterns, labels, label0, la
         for i in range(NUMBER_OF_PROCESSES):
             task_queue.put('STOP')
 
-        print("\nFinished Scanning!                                                \n")
+        print("\nFinished Scanning!\n")
 
         res = {
             'Acc List': np.mean(accuracy_list, axis=2),

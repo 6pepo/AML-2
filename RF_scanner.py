@@ -32,7 +32,7 @@ if __name__ == '__main__':
     
     tree_range = range(10, 410, 10)
 
-    k_range = range(2, 10, 1)
+    k_range = range(2, 11, 1)
 
     n_seeds = 100
 
@@ -60,7 +60,7 @@ if __name__ == '__main__':
         ax2[1].set_xlabel('Number of Trees')
         fig2.suptitle(f'{k} Folds')
     
-        fig2.savefig(f'{n_seeds} Random Seeds PCA/{k}_folds.png', dpi=120)
+        fig2.savefig(f'{n_seeds} Random Seeds Not PCA/{k}_folds.png', dpi=120)
 
     # Heatmaps n_fold - n_trees
     fig, ax = plt.subplots(1,2, figsize=(16,9))
@@ -71,7 +71,8 @@ if __name__ == '__main__':
     sens_colormesh = RF.heatmap_plotter(ax[0], k_range, tree_range, res['Sens List'], "Sensitivity", normalization, cm.viridis)
     spec_colormesh = RF.heatmap_plotter(ax[1], k_range, tree_range, res['Spec List'], "Specificity", normalization, cm.viridis)
     
-    fig.savefig(f'{n_seeds} Random Seeds Not PCA/picked_indexes_distributions.png', dpi=120)
+    fig.colorbar(spec_colormesh,  orientation='vertical')
+    fig.savefig(f'{n_seeds} Random Seeds Not PCA/heatmaps.png', dpi=120)
 
     print("CPU Time:" + str(round((clock.process_time() - start_cpu)/60)) + "'" + str(round((clock.process_time() - start_cpu)%60)) + "''")
     plt.show()
