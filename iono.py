@@ -84,6 +84,8 @@ patt_ext = np.delete(patt_ext, 1, axis=1)       # Removes column 1 since it's al
 corr = np.corrcoef(patt_train, rowvar=False)    # 2x Real Features
 # corr = np.corrcoef(signal, rowvar=False)      # Complex Features
 e_val, e_vec = RF.torch_eig(corr, var_type=torch.float64)
+e_val = np.real(e_val)
+e_vec = np.real(e_vec)
 
 sort_index = np.argsort(np.abs(e_val))[::-1]       
 e_val = e_val[sort_index]

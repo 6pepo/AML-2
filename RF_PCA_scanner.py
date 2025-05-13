@@ -14,17 +14,18 @@ if __name__ == '__main__':
     pc_mat = pc_mat.to_numpy()
 
     patterns = pd.read_csv("iono_trainPatt.csv", header=0, index_col=0)
-    patterns = patterns.to_numpy().dot(pc_mat)
+    patterns = patterns.to_numpy()
+    patterns = patterns.dot(pc_mat)
     labels = pd.read_csv("iono_trainLab.csv", header=0, index_col=0)
     labels = np.ravel(labels.to_numpy())
     label0 = 'b'
     label1 = 'g'
 
-    tree_range = range(10, 410, 10)
+    tree_range = range(10, 201, 10)
 
-    k_range = range(2, 11, 1)
+    k_range = range(2, 9, 1)
 
-    n_seeds = 100
+    n_seeds = 10
     
     good = 0
     bad = 0

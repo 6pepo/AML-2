@@ -41,7 +41,7 @@ if __name__ == '__main__':
 	ext_patterns = pd.read_csv("iono_extPatt.csv", header=0, index_col=0)
 	ext_labels = pd.read_csv("iono_extLab.csv", header=0, index_col=0)
 
-	NUMBER_OF_PROCESSES = os.cpu_count()
+	NUMBER_OF_PROCESSES = int(os.cpu_count()/2)
 			
 	task_queue = mp.Queue()
 	done_queue = mp.Queue()

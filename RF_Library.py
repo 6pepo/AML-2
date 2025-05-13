@@ -231,7 +231,7 @@ def RF_binary_scanner(tree_range, k_range, n_seeds, patterns, labels, label0, la
 
         tot_iter = len_tree*len_k*n_seeds
 
-        NUMBER_OF_PROCESSES = os.cpu_count()
+        NUMBER_OF_PROCESSES = int(os.cpu_count()/2)
         
         task_queue = mp.Queue()
         done_queue = mp.Queue()
