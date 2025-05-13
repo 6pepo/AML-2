@@ -30,11 +30,11 @@ if __name__ == '__main__':
     print('Good signals:', good)
     print('Bad signals:', bad)
     
-    tree_range = range(10, 410, 100)
+    tree_range = range(10, 410, 10)
 
     k_range = range(2, 11, 1)
 
-    n_seeds = 10
+    n_seeds = 100
 
     res = RF.RF_binary_scanner(tree_range, k_range, n_seeds, patterns, labels, label0, label1)
     
