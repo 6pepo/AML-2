@@ -433,7 +433,6 @@ def plot_histo_gaus_stat(dist1, label1, dist2, label2):
     i_max2 = np.argmax(bin_vals2)
     par2 = [bin_vals2[i_max2], bin_centers2[i_max2], np.std(dist2)]
     
-    print(f'\nBin1:{len(bin_centers1[mask1])}, Bin2:{len(bin_centers2[mask2])}\n')
     if len(bin_centers1[mask1]) > 3 and len(bin_centers2[mask2]) > 3:
         popt1, pcov1 = curve_fit(gaussian, bin_centers1[mask1], bin_vals1[mask1], par1, maxfev=10000)
         popt2, pcov2 = curve_fit(gaussian, bin_centers2[mask2], bin_vals2[mask2], par2, maxfev=10000)
