@@ -43,6 +43,8 @@ print(labels)
 ntarin = 100
 patt_train = np.empty((ntrain, x.shape[1]))
 lab_train = np.full(ntrain, '')
+patt_ext = np.empty((x.shape[0]-ntrain, x.shape[1]))
+lab_ext = np.full(x.shape[0]-ntrain, '')
 good_t = 0
 bad_t = 0
 good_e = 0
