@@ -11,8 +11,12 @@ if __name__ == '__main__':
 
     start_cpu = clock.process_time()
 
+    pc_mat = pd.read_csv("eigenvectors.csv", sep=',', index_col=0)
+    pc_mat = pc_mat.to_numpy()
+
     patterns = pd.read_csv("iono_trainPatt.csv", header=0, index_col=0)
     patterns = patterns.to_numpy()
+    patterns = patterns.dot(pc_mat)
     labels = pd.read_csv("iono_trainLab.csv", header=0, index_col=0)
     labels = np.ravel(labels.to_numpy())
     label0 = 'b'
@@ -30,17 +34,17 @@ if __name__ == '__main__':
     print('Good signals:', good)
     print('Bad signals:', bad)
     
-    epoch_range = range(10000, 100000, 2500)
+    epoch_range = range(10000, 100000, 5000)
     k_range = range(2, 11, 1)
     lr_range = np.arange(1e-4, 1e-3, 0.5e-4)
 
     res = NN.NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, label1)
     
-    if not os.path.exists(f'NN Not PCA'):
-        os.makedirs(f'NN Not PCA')
+    if not os.path.exists(f'NN PCA'):
+        os.makedirs(f'NN PCA')
     
-    if not os.path.exists(f'NN Not PCA/heatmaps'):
-        os.makedirs(f'NN Not PCA/heatmaps')
+    if not os.path.exists(f'NN PCA/heatmaps'):
+        os.makedirs(f'NN PCA/heatmaps')
     
     sens = res['Sens List']
     spec = res['Spec List']
@@ -55,7 +59,7 @@ if __name__ == '__main__':
         
         fig.suptitle(f'{k}-Fold')
         fig.colorbar(spec_colormesh_ep,  orientation='vertical')
-        fig.savefig(f'NN Not PCA/heatmaps/heatmap_{k}_fold.png', dpi=120)
+        fig.savefig(f'NN PCA/heatmaps/heatmap_{k}_fold.png', dpi=120)
 
     print("CPU Time:" + str(round((clock.process_time() - start_cpu)/60)) + "'" + str(round((clock.process_time() - start_cpu)%60)) + "''")
     plt.show()
@@ -93,7 +97,7 @@ if __name__ == '__main__':
 
         ax1[1].set_xlabel('Learning rate')
         fig1.suptitle(f'Metrics: {k_range[i_k]}-folds, {epoch_range[i_ep]} epochs')
-        fig1.savefig(f'NN Not PCA/lr_vs_metrics_{k_range[i_k]}_folds_{epoch_range[i_ep]}_epochs.png', dpi=120)
+        fig1.savefig(f'NN PCA/lr_vs_metrics_{k_range[i_k]}_folds_{epoch_range[i_ep]}_epochs.png', dpi=120)
                 
 
         fig2, ax2 = plt.subplots(2, 1, sharex=True, figsize=(16,9))
@@ -112,7 +116,7 @@ if __name__ == '__main__':
 
         ax2[1].set_xlabel('Epochs')
         fig2.suptitle(f'Metrics: {k_range[i_k]}-folds, {lr_range[i_lr]:0.5f} LR')
-        fig2.savefig(f'NN Not PCA/epoch_vs_metrics_{k_range[i_k]}_folds_{lr_range[i_lr]:0.5f}_LR.png', dpi=120)
+        fig2.savefig(f'NN PCA/epoch_vs_metrics_{k_range[i_k]}_folds_{lr_range[i_lr]:0.5f}_LR.png', dpi=120)
 
 
         plt.show()

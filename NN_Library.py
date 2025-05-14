@@ -249,7 +249,7 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
                 iter += 1
                 
                 # Progress bar
-                progress.set_description(f"Epoch: {n_ep} | Fold: {i_k+1}/{len_k} | Learning Rate: {val_lr}")
+                progress.set_description(f"Epoch: {n_ep} | Fold: {i_k+1}/{len_k} | Learning Rate: {val_lr:0.5f}")
                 progress.update(1)
                 
                 # print("N_trees: ", n_trees, "\tN_fold: ", k, "\tIteration: ", iter, "/", tot_iter,end='\r')     #Python 3.x
