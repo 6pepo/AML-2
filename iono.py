@@ -40,7 +40,7 @@ labels = y.to_numpy().ravel()
 print(labels)
 
 # Picking first 50 good and 50 bad patterns for training, the rest is for External Testing
-ntarin = 100
+ntrain = 100
 patt_train = np.empty((ntrain, x.shape[1]))
 lab_train = np.full(ntrain, '')
 patt_ext = np.empty((x.shape[0]-ntrain, x.shape[1]))
