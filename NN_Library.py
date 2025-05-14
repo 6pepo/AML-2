@@ -264,72 +264,69 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
     print("\nFinished Scanning!                                                \n")
 
     res = {
-        'Acc List': np.mean(accuracy_list, axis=2),
-        'Acc Std List': np.std(accuracy_list, axis=2),
-        'Sens List': np.mean(sensitivity_list, axis=2),
-        'Sens Std List': np.std(sensitivity_list, axis=2),
-        'Spec List': np.mean(specificity_list, axis=2),
-        'Spec Std List': np.std(specificity_list, axis=2)
+        'Acc List': accuracy_list,
+        'Sens List': sensitivity_list,
+        'Spec List': specificity_list,
     }
 
     return res
 
 # def NN_binary_scanner_MP(tree_range, k_range, n_seeds, patterns, labels, label0, label1, ext_patt = None, ext_lab = None):
-    if __name__ == 'RF_Library':
-        mp.freeze_support()
+#     if __name__ == 'RF_Library':
+#         mp.freeze_support()
 
-        len_tree = len(tree_range)
-        len_k = len(k_range)
+#         len_tree = len(tree_range)
+#         len_k = len(k_range)
 
-        accuracy_list = np.empty((len_tree, len_k, n_seeds))
-        sensitivity_list = np.empty((len_tree, len_k, n_seeds))
-        specificity_list = np.empty((len_tree, len_k, n_seeds))
+#         accuracy_list = np.empty((len_tree, len_k, n_seeds))
+#         sensitivity_list = np.empty((len_tree, len_k, n_seeds))
+#         specificity_list = np.empty((len_tree, len_k, n_seeds))
 
         
-        print("Begin Scanning...")
+#         print("Begin Scanning...")
 
-        tot_iter = len_tree*len_k*n_seeds
+#         tot_iter = len_tree*len_k*n_seeds
 
-        NUMBER_OF_PROCESSES = int(os.cpu_count()/2)
+#         NUMBER_OF_PROCESSES = int(os.cpu_count()/2)
         
-        task_queue = mp.Queue()
-        done_queue = mp.Queue()
+#         task_queue = mp.Queue()
+#         done_queue = mp.Queue()
 
-        print("Preparing Tasks...")
-        for a in tree_range:
-            for b in k_range:
-                for c in range(n_seeds):
-                    task_queue.put((NN_binary_kfold, (a, b, patterns, labels, label0, label1, c)))
+#         print("Preparing Tasks...")
+#         for a in tree_range:
+#             for b in k_range:
+#                 for c in range(n_seeds):
+#                     task_queue.put((NN_binary_kfold, (a, b, patterns, labels, label0, label1, c)))
 
-        for i in range(NUMBER_OF_PROCESSES):
-            mp.Process(target=worker, args=(task_queue, done_queue)).start()
+#         for i in range(NUMBER_OF_PROCESSES):
+#             mp.Process(target=worker, args=(task_queue, done_queue)).start()
 
-        progress = tqdm(total = tot_iter)
-        progress.set_description("Executing Tasks")
+#         progress = tqdm(total = tot_iter)
+#         progress.set_description("Executing Tasks")
 
-        for i in range(tot_iter):
-            res = done_queue.get()
-            accuracy_list[tree_range.index(res['n trees']), k_range.index(res['k']), res['n seed']] = res['Acc']
-            sensitivity_list[tree_range.index(res['n trees']), k_range.index(res['k']), res['n seed']] = res['Sens']
-            specificity_list[tree_range.index(res['n trees']), k_range.index(res['k']), res['n seed']] = res['Spec']
-            progress.update(1)
+#         for i in range(tot_iter):
+#             res = done_queue.get()
+#             accuracy_list[tree_range.index(res['n trees']), k_range.index(res['k']), res['n seed']] = res['Acc']
+#             sensitivity_list[tree_range.index(res['n trees']), k_range.index(res['k']), res['n seed']] = res['Sens']
+#             specificity_list[tree_range.index(res['n trees']), k_range.index(res['k']), res['n seed']] = res['Spec']
+#             progress.update(1)
 
-        for i in range(NUMBER_OF_PROCESSES):
-            task_queue.put('STOP')
+#         for i in range(NUMBER_OF_PROCESSES):
+#             task_queue.put('STOP')
 
-        print("\nFinished Scanning!\n")
+#         print("\nFinished Scanning!\n")
 
-        res = {
-            'Acc List': np.mean(accuracy_list, axis=2),
-            'Acc Std List': np.std(accuracy_list, axis=2),
-            'Sens List': np.mean(sensitivity_list, axis=2),
-            'Sens Std List': np.std(sensitivity_list, axis=2),
-            'Spec List': np.mean(specificity_list, axis=2),
-            'Spec Std List': np.std(specificity_list, axis=2)
-        }
+#         res = {
+#             'Acc List': np.mean(accuracy_list, axis=2),
+#             'Acc Std List': np.std(accuracy_list, axis=2),
+#             'Sens List': np.mean(sensitivity_list, axis=2),
+#             'Sens Std List': np.std(sensitivity_list, axis=2),
+#             'Spec List': np.mean(specificity_list, axis=2),
+#             'Spec Std List': np.std(specificity_list, axis=2)
+#         }
 
-        return res
-    return 0
+#         return res
+#     return 0
 
 def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=None, precision=None, title=None):
     fig, ax = plt.subplots(figsize=(16,9))
@@ -485,10 +482,10 @@ def torch_eig(mat, var_type):
 
     return e_val, e_vec
 
-def heatmap_plotter(ax, x, y, array, title, norm, cmap = cm.viridis):
+def heatmap_plotter(ax, x, y, array, title, x_label, y_label, norm, cmap = cm.viridis):
     colormesh = ax.pcolormesh(x, y, array, norm=norm, cmap=cmap)
-    ax.set_ylabel("Number of epochs")
-    ax.set_xlabel("Number of folds")
+    ax.set_ylabel(y_label)
+    ax.set_xlabel(x_label)
     ax.set_title(title)
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
