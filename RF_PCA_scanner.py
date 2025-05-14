@@ -21,11 +21,11 @@ if __name__ == '__main__':
     label0 = 'b'
     label1 = 'g'
 
-    tree_range = range(10, 410, 100)
+    tree_range = range(10, 410, 10)
 
     k_range = range(2, 11, 1)
 
-    n_seeds = 10
+    n_seeds = 100
     
     good = 0
     bad = 0
