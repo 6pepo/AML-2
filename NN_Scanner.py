@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     k_range = range(2, 11, 1)
 
-    lr_range = np.arange(1e-4, 1e-2, 1e-3)
+    lr_range = np.arange(1e-5, 1e-4, 1e-5)
 
     res = NN.NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, label1)
     

@@ -249,7 +249,7 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
                 iter += 1
                 
                 # Progress bar
-                progress.set_description(f"Epoch: {n_ep} | Fold: {i_k+1}/{len_k} | Rand_state: {val_lr}")
+                progress.set_description(f"Epoch: {n_ep} | Fold: {i_k+1}/{len_k} | Learning Rate: {val_lr}")
                 progress.update(1)
                 
                 # print("N_trees: ", n_trees, "\tN_fold: ", k, "\tIteration: ", iter, "/", tot_iter,end='\r')     #Python 3.x
@@ -497,8 +497,8 @@ def heatmap_plotter(ax, x, y, array, title, norm, cmap = cm.viridis):
     for row in range(rows):
         for col in range(cols):
             if norm(array[row][col]) < 0.5:
-                ax.text(x[col], y[row], "{:.2f}".format(array[row,col]), ha='center', va='center', color=cmap(0.99))
+                ax.text(x[col], y[row], "{:.2f}".format(array[row,col]), ha='center', va='center', color=cmap(0.99), fontsize='xx-small')
             else:
-                ax.text(x[col], y[row], "{:.2f}".format(array[row,col]), ha='center', va='center', color=cmap(0.))
+                ax.text(x[col], y[row], "{:.2f}".format(array[row,col]), ha='center', va='center', color=cmap(0.), fontsize='xx-small')
 
     return colormesh
