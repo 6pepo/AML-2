@@ -65,16 +65,16 @@ if __name__ == '__main__':
     
     while graph != 'n':
         print('Scegliere quale fold graficare')
-        print([f'{i}-->{k} folds' for i,k in enumerate(k_range)] )
+        print([f'{k} folds-->{i}' for i,k in enumerate(k_range)] )
         i_k = int(input())
 
         
         print('Scegliere quale epoch fissare')
-        print([f'{i}-->{ep} epochs' for i,ep in enumerate(epoch_range)] )
+        print([f'{ep} epochs-->{i}' for i,ep in enumerate(epoch_range)] )
         i_ep = int(input())
 
         print('Scegliere quale learning rate fissare')
-        print([f'{i}-->{lr:0.5f} LR' for i,lr in enumerate(lr_range)] )
+        print([f'{lr:0.5f} LR-->{i}' for i,lr in enumerate(lr_range)] )
         i_lr = int(input())
 
         fig1, ax1 = plt.subplots(2, 1, sharex=True, figsize=(16,9))
