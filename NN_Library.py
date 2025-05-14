@@ -274,6 +274,294 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
 
     return res
 
+def NN_kfold_par(k, par, patterns, labels, label0, label1, iter = 0, ext_patt = None, ext_lab = None):
+    start = clock.process_time() 
+
+    # NOTA: par deve deve essere del tipo:
+    # par = {
+    #         'loss': 'log_loss',
+    #         'alpha': 0.0001,
+    #         'max_iter': 10000,
+    #         'tol': 0.00001,
+    #         'learning_rate': 'constant',
+    #         'eta0': 0.0,
+    #     }
+
+    # Parameter of SGDClassifier
+    loss = par['loss']  # def: 'log_loss'
+    alpha = par['alpha']    # def: 0.0001
+    max_iter = par['max_iter']  # numero di epoche
+    tol = par['tol']    # def: 0.00001 
+    learning_rate = par['learning_rate']    # def: 'constant'
+    eta0 = par['eta0']  # lr iniziale
+
+    models = []
+
+    # Metrics of single folds
+    fold_accuracy = []
+    fold_sensitivity = []
+    fold_specificity = []
+
+    kf = StratifiedKFold(n_splits = k, shuffle = True)
+    indices = kf.split(patterns, labels)
+
+    if np.any(ext_lab != None):
+        vote_1_ext = np.zeros(len(ext_lab))
+        vote_0_ext = np.zeros(len(ext_lab))
+
+        N1_ext = 0
+        N0_ext = 0
+        for lab in ext_lab:
+            if lab == label0:
+                N0_ext +=1
+            if lab == label1:
+                N1_ext +=1
+
+    for i, (train_index, test_index) in enumerate(indices):
+
+        train_pattern = patterns[train_index]
+        train_labels = labels[train_index]
+
+        test_pattern = patterns[test_index]
+        test_labels = labels[test_index]
+
+        model = SGDClassifier(loss=loss, # def: 'log_loss'
+                              penalty='l2', 
+                              alpha=alpha, # def: 0.0001
+                              l1_ratio=0.15, 
+                              fit_intercept=True, 
+                              max_iter=max_iter, # numero di epoche 
+                              tol=tol, # def: 0.00001 
+                              shuffle=True, 
+                              verbose=0, 
+                              epsilon=0.1, 
+                              n_jobs=None, 
+                              random_state=None, 
+                              learning_rate=learning_rate, # def: 'constant'
+                              eta0=eta0, # lr iniziale
+                              power_t=0.5, 
+                              early_stopping=False, 
+                              validation_fraction=0.1, 
+                              n_iter_no_change=5, 
+                              class_weight=None, 
+                              warm_start=True, 
+                              average=False)
+
+
+        model.fit(train_pattern, train_labels)
+        models.append(model)
+
+        # Internal test
+        test_prediction = model.predict(test_pattern)
+
+        temp_Npos = 0
+        temp_Nneg = 0
+
+        for t_lab in test_labels:
+            if t_lab == label1:
+                temp_Npos += 1
+            if t_lab == label0:
+                temp_Nneg += 1
+
+        temp_accuracy = 0.
+        temp_sensitivity = 0.
+        temp_specificity = 0.
+
+        for j, pred in enumerate(test_prediction):
+            if pred == label1 and test_labels[j] == label1:
+                temp_accuracy += 1./(temp_Npos+temp_Nneg)
+                temp_sensitivity += 1./temp_Npos
+    
+            if pred == label0 and test_labels[j] == label0:
+                temp_accuracy += 1./(temp_Npos+temp_Nneg)
+                temp_specificity += 1./temp_Nneg
+
+        fold_accuracy.append(temp_accuracy)
+        fold_sensitivity.append(temp_sensitivity)
+        fold_specificity.append(temp_specificity)
+
+        # External test: Majority vote counting
+        if np.any(ext_lab != None):
+            ext_pred = model.predict(ext_patt)
+
+            for j, pred in enumerate(ext_pred):
+                if pred == label0:
+                    vote_0_ext[j] += 1
+                if pred == label1:
+                    vote_1_ext[j] += 1
+
+    # Performance of External Test: Best in Training
+    # Best Accuracy
+    bacc_model = models[np.argmax(fold_accuracy)]
+    bacc_accuracy = 0.
+    bacc_sensitivity = 0.
+    bacc_specificity = 0.
+
+    if np.any(ext_lab != None):
+        bacc_predict = bacc_model.predict(ext_patt)
+
+        for j, pred in enumerate(bacc_predict):
+            if pred == label1 and ext_lab[j] == label1:
+                bacc_accuracy += 1./(N1_ext+N0_ext)
+                bacc_sensitivity += 1./N1_ext
+        
+            if pred == label0 and ext_lab[j] == label0:
+                bacc_accuracy += 1./(N1_ext+N0_ext)
+                bacc_specificity += 1./N0_ext
+
+    # Best Sensitivity
+    bsens_model = models[np.argmax(fold_sensitivity)]
+    bsens_accuracy = 0.
+    bsens_sensitivity = 0.
+    bsens_specificity = 0.
+
+    if np.any(ext_lab != None):
+        bsens_predict = bsens_model.predict(ext_patt)
+
+        for j, pred in enumerate(bsens_predict):
+            if pred == label1 and ext_lab[j] == label1:
+                bsens_accuracy += 1./(N1_ext+N0_ext)
+                bsens_sensitivity += 1./N1_ext
+        
+            if pred == label0 and ext_lab[j] == label0:
+                bsens_accuracy += 1./(N1_ext+N0_ext)
+                bsens_specificity += 1./N0_ext
+
+    # Best Specificity
+    bspec_model = models[np.argmax(fold_specificity)]
+    bspec_accuracy = 0.
+    bspec_sensitivity = 0.
+    bspec_specificity = 0.
+    
+    if np.any(ext_lab != None):
+        bspec_predict = bspec_model.predict(ext_patt)
+
+        for j, pred in enumerate(bspec_predict):
+            if pred == label1 and ext_lab[j] == label1:
+                bspec_accuracy += 1./(N1_ext+N0_ext)
+                bspec_sensitivity += 1./N1_ext
+
+        
+            if pred == label0 and ext_lab[j] == label0:
+                bspec_accuracy += 1./(N1_ext+N0_ext)
+                bspec_specificity += 1./N0_ext
+
+    # External test: Majority vote
+    ext_accuracy = 0.
+    ext_sensitivity = 0.
+    ext_specificity = 0.
+    conf_mat = np.zeros((2,2))
+
+    if np.any(ext_lab != None):
+        for i, true_label in enumerate(ext_lab):
+            if vote_0_ext[i]>=vote_1_ext[i]:
+                if true_label == label1:
+                    conf_mat[1][0] += 1
+                if true_label == label0:
+                    ext_accuracy += 1./(N1_ext+N0_ext)
+                    ext_specificity += 1./N0_ext
+                    conf_mat[1][1] += 1
+            if vote_0_ext[i]<vote_1_ext[i]:
+                if true_label == label1:
+                    ext_accuracy += 1./(N1_ext+N0_ext)
+                    ext_sensitivity += 1./N1_ext
+                    conf_mat[0][0] += 1
+                if true_label == label0:
+                    conf_mat[0][1] += 1
+
+    cpu_time_stamp = clock.process_time() - start
+
+    loss = par['loss']  # def: 'log_loss'
+    alpha = par['alpha']    # def: 0001
+    max_iter = par['max_iter']  # numero di epoche
+    tol = par['tol']    # def: 0.00001 
+    learning_rate = par['learning_rate']    # def: 'constant'
+    eta0 = par['eta0']  # lr iniziale
+
+    res = {
+        'k': k,
+
+        'loss': loss,
+        'alpha': alpha,
+        'max_iter': max_iter,
+        'tol': tol,
+        'learning_rate': learning_rate,
+        'eta0': eta0,
+
+        'Acc': np.mean(fold_accuracy),
+        'Acc Err': np.std(fold_accuracy),    #/np.sqrt(k),
+        'Sens': np.mean(fold_sensitivity),
+        'Sens Err': np.std(fold_sensitivity),    #/np.sqrt(k),
+        'Spec': np.mean(fold_specificity),
+        'Spec Err': np.std(fold_specificity),    #/np.sqrt(k),
+        'Ext Acc': ext_accuracy,
+        'Ext Sens': ext_sensitivity,
+        'Ext Spec': ext_specificity,
+        'BAcc Acc': bacc_accuracy,
+        'BAcc Sens': bacc_sensitivity,
+        'BAcc Spec': bacc_specificity,
+        'BSens Acc': bsens_accuracy,
+        'BSens Sens': bsens_sensitivity,
+        'BSens Spec': bsens_specificity,
+        'BSpec Acc': bspec_accuracy,
+        'BSpec Sens': bspec_sensitivity,
+        'BSpec Spec': bspec_specificity,
+        'Models': models,
+        'Conf Mat': conf_mat,
+        'Time': cpu_time_stamp
+    }
+
+    return res
+
+def NN_parameters_scanner(hyperpar, par_range, patterns, labels, label0, label1, ext_patt = None, ext_lab = None):
+    # len_ep = len(epoch_range)
+    # len_k = len(k_range)
+    # len_lr = len(lr_range)
+
+
+
+    accuracy_list = np.empty((len_ep, len_k, len_lr))
+    sensitivity_list = np.empty((len_ep, len_k, len_lr))
+    specificity_list = np.empty((len_ep, len_k, len_lr))
+
+    print("Begin Scanning...")
+
+    tot_iter = len_ep*len_k*len_lr
+    progress = tqdm(total=tot_iter)
+    iter = 0
+
+    for i_lr, val_lr in enumerate(lr_range):
+        for i_ep, n_ep in enumerate(epoch_range):
+            for i_k, k in enumerate(k_range):
+                iter += 1
+                
+                # Progress bar
+                progress.set_description(f"Epoch: {n_ep} | Fold: {i_k+1}/{len_k} | Rand_state: {val_lr}")
+                progress.update(1)
+                
+                # print("N_trees: ", n_trees, "\tN_fold: ", k, "\tIteration: ", iter, "/", tot_iter,end='\r')     #Python 3.x
+                # print("N_trees: {}\tN_fold: {}\tIteration: {}/{} \r".format(n_trees, k, iter, tot_iter)),       #Python 2.x
+
+                res = NN_binary_kfold(val_lr, k, n_ep, patterns, labels, label0, label1)
+
+                accuracy_list[i_ep, i_k, i_lr] = res['Acc']
+                sensitivity_list[i_ep, i_k, i_lr] = res['Sens']
+                specificity_list[i_ep, i_k, i_lr] = res['Spec']
+
+    print("\nFinished Scanning!                                                \n")
+
+    res = {
+        'Acc List': np.mean(accuracy_list, axis=2),
+        'Acc Std List': np.std(accuracy_list, axis=2),
+        'Sens List': np.mean(sensitivity_list, axis=2),
+        'Sens Std List': np.std(sensitivity_list, axis=2),
+        'Spec List': np.mean(specificity_list, axis=2),
+        'Spec Std List': np.std(specificity_list, axis=2)
+    }
+
+    return res
+
+
 # def NN_binary_scanner_MP(tree_range, k_range, n_seeds, patterns, labels, label0, label1, ext_patt = None, ext_lab = None):
     if __name__ == 'RF_Library':
         mp.freeze_support()
