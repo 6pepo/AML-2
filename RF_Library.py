@@ -327,6 +327,10 @@ def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=N
     ax.axis('off')
     fig.frameon = False
     
+    for i in range(len(conf_mat)):
+        for j in range(len(conf_mat[0])):
+            conf_mat[i,j] = round(conf_mat[i,j], 2)
+
     tot = conf_mat[0][0]+conf_mat[0][1]+conf_mat[1][0]+conf_mat[1][1]
     if precision == None:
         precision = conf_mat[0][0] / (conf_mat[0][0]+conf_mat[0][1])
@@ -337,10 +341,6 @@ def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=N
     if accuracy == None:
         accuracy = (conf_mat[0][0] + conf_mat[1][1]) / tot
     F1score = 2. * (precision * sensitivity) / (precision + sensitivity)
-
-    for i in range(len(conf_mat)):
-        for j in range(len(conf_mat[0])):
-            conf_mat[i,j] = round(conf_mat[i,j]/tot * 100,2)
             
     norm = colors.Normalize(vmin = 0, vmax = np.max(conf_mat))
     normalized = norm((0., conf_mat[0][0], conf_mat[0][1], conf_mat[1][0], conf_mat[1][1]))
@@ -365,38 +365,38 @@ def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=N
                       'size': 'medium',
                       'math_fontfamily': 'dejavusans'}
 
-    table.add_cell(0,2, width = 0.3, height = 0.1, text='Actual', loc='right', fontproperties = fontproperties)
+    table.add_cell(0,2, width = 0.3, height = 0.1, text='Actual', loc='right', fontproperties = fontproperties, facecolor = 'white')
     table[0,2].visible_edges = 'BTL'
-    table.add_cell(0,3, width = 0.3, height = 0.1, text='Condition', loc='left', fontproperties = fontproperties)
+    table.add_cell(0,3, width = 0.3, height = 0.1, text='Condition', loc='left', fontproperties = fontproperties, facecolor = 'white')
     table[0,3].visible_edges = 'BTR'
 
-    table.add_cell(1,1, width = 0.2, height = 0.2, text='Total\n\n'+str(tot), loc='center', fontproperties = fontproperties)
-    table.add_cell(1,2, width = 0.3, height = 0.2, text='Positive\n\n'+str(conf_mat[0][0]+conf_mat[1][0]), loc='center', fontproperties = fontproperties)
-    table.add_cell(1,3, width = 0.3, height = 0.2, text='Negative\n\n'+str(conf_mat[0][1]+conf_mat[1][1]), loc='center', fontproperties = fontproperties)
+    table.add_cell(1,1, width = 0.2, height = 0.2, text=f'Total\n\n{tot}', loc='center', fontproperties = fontproperties)
+    table.add_cell(1,2, width = 0.3, height = 0.2, text=f'Positive\n\n{conf_mat[0][0]+conf_mat[1][0]}', loc='center', fontproperties = fontproperties, facecolor = 'white')
+    table.add_cell(1,3, width = 0.3, height = 0.2, text=f'Negative\n\n{conf_mat[0][1]+conf_mat[1][1]}', loc='center', fontproperties = fontproperties, facecolor = 'white')
 
-    table.add_cell(2,0, width = 0.1, height = 0.3, text='Classifier', loc='center', fontproperties = fontproperties)
+    table.add_cell(2,0, width = 0.1, height = 0.3, text='Classifier', loc='center', fontproperties = fontproperties, facecolor = 'white')
     table[2,0].set_text_props(rotation = 'vertical')
     table[2,0].visible_edges = 'LTR'
-    table.add_cell(2,1, width = 0.2, height = 0.3, text='Positive\n\n'+str(round(conf_mat[0][0]+conf_mat[0][1], 2)), loc='center', fontproperties = fontproperties)
-    table.add_cell(2,2, width = 0.3, height = 0.3, text=str(conf_mat[0][0]), loc='center', fontproperties = fontproperties, facecolor = cell_color[1])
+    table.add_cell(2,1, width = 0.2, height = 0.3, text=f'Positive\n\n{conf_mat[0][0]+conf_mat[0][1]}', loc='center', fontproperties = fontproperties, facecolor = 'white')
+    table.add_cell(2,2, width = 0.3, height = 0.3, text=f'{conf_mat[0][0]:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[1])
     table[2,2].set_text_props(c = text_color[0][0])
-    table.add_cell(2,3, width = 0.3, height = 0.3, text=str(conf_mat[0][1]), loc='center', fontproperties = fontproperties, facecolor = cell_color[2])
+    table.add_cell(2,3, width = 0.3, height = 0.3, text=f'{conf_mat[0][1]:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[2])
     table[2,3].set_text_props(c = text_color[0][1])
-    table.add_cell(2,4, width = 0.2, height = 0.3, text='Precision\n\n{:.2}'.format(precision), loc='center', fontproperties = fontproperties)
+    table.add_cell(2,4, width = 0.2, height = 0.3, text=f'Precision\n\n{precision:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
 
-    table.add_cell(3,0, width = 0.1, height = 0.3, text='Output of', loc='center', fontproperties = fontproperties)
+    table.add_cell(3,0, width = 0.1, height = 0.3, text='Output of', loc='center', fontproperties = fontproperties, facecolor = 'white')
     table[3,0].set_text_props(rotation = 'vertical')
     table[3,0].visible_edges = 'BLR'
-    table.add_cell(3,1, width = 0.2, height = 0.3, text='Negative\n\n'+str(round(conf_mat[1][0]+conf_mat[1][1], 2)), loc='center', fontproperties = fontproperties)
-    table.add_cell(3,2, width = 0.3, height = 0.3, text=str(conf_mat[1][0]), loc='center', fontproperties = fontproperties, facecolor = cell_color[3])
+    table.add_cell(3,1, width = 0.2, height = 0.3, text=f'Negative\n\n{conf_mat[1][0]+conf_mat[1][1]}', loc='center', fontproperties = fontproperties, facecolor = 'white')
+    table.add_cell(3,2, width = 0.3, height = 0.3, text=f'{conf_mat[1][0]:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[3])
     table[3,2].set_text_props(c = text_color[1][0])
-    table.add_cell(3,3, width = 0.3, height = 0.3, text=str(conf_mat[1][1]), loc='center', fontproperties = fontproperties, facecolor = cell_color[4])
+    table.add_cell(3,3, width = 0.3, height = 0.3, text=f'{conf_mat[1][1]:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[4])
     table[3,3].set_text_props(c = text_color[1][1])
     table.add_cell(3,4, width = 0.2, height = 0.3)
 
-    table.add_cell(4,2, width = 0.3, height = 0.2, text='Sensitivity\n\n{:.2}'.format(sensitivity), loc='center', fontproperties = fontproperties)
-    table.add_cell(4,3, width = 0.3, height = 0.2, text='Specificity\n\n{:.2}'.format(specificity), loc='center', fontproperties = fontproperties)
-    table.add_cell(4,4, width = 0.2, height = 0.2, text='Acc: {:.2}\n\nF1: {:.2}'.format(accuracy, F1score), loc='center', fontproperties = fontproperties)
+    table.add_cell(4,2, width = 0.3, height = 0.2, text=f'Sensitivity\n\n{sensitivity:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
+    table.add_cell(4,3, width = 0.3, height = 0.2, text=f'Specificity\n\n{specificity:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
+    table.add_cell(4,4, width = 0.2, height = 0.2, text=f'Acc: {accuracy:.2%}\n\nF1: {F1score:.2}', loc='center', fontproperties = fontproperties, facecolor = 'white')
     
     ax.add_table(table)
 
@@ -471,7 +471,7 @@ def torch_eig(mat, var_type):
 
     return e_val, e_vec
 
-def heatmap_plotter(ax, x, y, array, title, norm, cmap = cm.viridis):
+def heatmap_plotter(ax, x, y, array, title, norm, cmap = cm.viridis, type = 'float'):
     colormesh = ax.pcolormesh(x, y, array, norm=norm, cmap=cmap)
     ax.set_ylabel("Number of trees")
     ax.set_xlabel("Number of folds")
@@ -480,11 +480,21 @@ def heatmap_plotter(ax, x, y, array, title, norm, cmap = cm.viridis):
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
     rows,cols = array.shape
-    for row in range(rows):
-        for col in range(cols):
-            if norm(array[row][col]) < 0.5:
-                ax.text(x[col], y[row], "{:.2f}".format(array[row,col]), ha='center', va='center', color=cmap(0.99))
-            else:
-                ax.text(x[col], y[row], "{:.2f}".format(array[row,col]), ha='center', va='center', color=cmap(0.))
+
+    if type == 'float':
+        for row in range(rows):
+            for col in range(cols):
+                if norm(array[row][col]) < 0.5:
+                    ax.text(x[col], y[row], f"{array[row,col]:.2f}", ha='center', va='center', color=cmap(0.99))
+                else:
+                    ax.text(x[col], y[row], f"{array[row,col]:.2f}", ha='center', va='center', color=cmap(0.))
+
+    if type == 'scientific':
+        for row in range(rows):
+            for col in range(cols):
+                if norm(array[row][col]) < 0.5:
+                    ax.text(x[col], y[row], f"{array[row,col]:.2E}", ha='center', va='center', color=cmap(0.99))
+                else:
+                    ax.text(x[col], y[row], f"{array[row,col]:.2E}", ha='center', va='center', color=cmap(0.))
 
     return colormesh
