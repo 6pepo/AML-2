@@ -513,7 +513,7 @@ def NN_kfold_par(k, par, patterns, labels, label0, label1, iter = 0, ext_patt = 
 
     return res
 
-def NN_parameters_scanner(par_all, par_range, patterns, labels, label0, label1, ext_patt = None, ext_lab = None):
+def NN_parameters_scanner(k, par_all, par_range, patterns, labels, label0, label1, ext_patt = None, ext_lab = None):
     
     # NOTA: par_all deve deve essere del tipo:
     # par_all = {
@@ -527,6 +527,7 @@ def NN_parameters_scanner(par_all, par_range, patterns, labels, label0, label1, 
     # Uno dei valori di par_all deve essere None, sarà quello su cui sarà fatto lo scanner
 
     par_index = ['loss', 'alpha', 'max_iter', 'tol', 'learning_rate', 'eta0']
+ 
     sp = None   # inizializing scanning parameter
     for index in par_index:
         if par_all[index] is None:
@@ -537,48 +538,46 @@ def NN_parameters_scanner(par_all, par_range, patterns, labels, label0, label1, 
 
     len_par = len(par_range)
 
-    accuracy_list = np.empty(len_par)
-    sensitivity_list = np.empty(len_par)
-    specificity_list = np.empty(len_par)
+    accuracy_list = np.empty((len_par, 100))
+    sensitivity_list = np.empty((len_par, 100))
+    specificity_list = np.empty((len_par, 100))
 
     
-    print("Begin Scanning...") # da fixare
+    print("Begin Scanning...")
 
-    tot_iter = len_ep*len_k*len_lr
+    tot_iter = len_par*100
     progress = tqdm(total=tot_iter)
     iter = 0
 
-    for i_lr, val_lr in enumerate(lr_range):
-        for i_ep, n_ep in enumerate(epoch_range):
-            for i_k, k in enumerate(k_range):
-                iter += 1
-                
-                # Progress bar
-                progress.set_description(f"Epoch: {n_ep} | Fold: {i_k+1}/{len_k} | Rand_state: {val_lr}")
-                progress.update(1)
-                
-                # print("N_trees: ", n_trees, "\tN_fold: ", k, "\tIteration: ", iter, "/", tot_iter,end='\r')     #Python 3.x
-                # print("N_trees: {}\tN_fold: {}\tIteration: {}/{} \r".format(n_trees, k, iter, tot_iter)),       #Python 2.x
+    
 
-                res = NN_binary_kfold(val_lr, k, n_ep, patterns, labels, label0, label1)
+    for i, val in enumerate(par_range):
+        for j in range(1, 100, 1): # ciclo su 100 random state    
+            # Progress bar
+            progress.set_description(f"Iteration: {i+1}/{len_par} | {sp}: {val}")
+            progress.update(1)
 
-                accuracy_list[i_ep, i_k, i_lr] = res['Acc']
-                sensitivity_list[i_ep, i_k, i_lr] = res['Sens']
-                specificity_list[i_ep, i_k, i_lr] = res['Spec']
+            par = par_all
+            par_all[sp] = val
+
+            res = NN_kfold_par(k, par, patterns, labels, label0, label1)
+
+            accuracy_list[i, j] = res['Acc']
+            sensitivity_list[i, j] = res['Sens']
+            specificity_list[i, j] = res['Spec']
 
     print("\nFinished Scanning!                                                \n")
 
     res = {
-        'Acc List': np.mean(accuracy_list, axis=2),
-        'Acc Std List': np.std(accuracy_list, axis=2),
-        'Sens List': np.mean(sensitivity_list, axis=2),
-        'Sens Std List': np.std(sensitivity_list, axis=2),
-        'Spec List': np.mean(specificity_list, axis=2),
-        'Spec Std List': np.std(specificity_list, axis=2)
+        'Acc List': np.mean(accuracy_list, axis=1),
+        'Acc Std List': np.std(accuracy_list, axis=1),
+        'Sens List': np.mean(sensitivity_list, axis=1),
+        'Sens Std List': np.std(sensitivity_list, axis=1),
+        'Spec List': np.mean(specificity_list, axis=1),
+        'Spec Std List': np.std(specificity_list, axis=1)
     }
 
     return res
-
 
 # def NN_binary_scanner_MP(tree_range, k_range, n_seeds, patterns, labels, label0, label1, ext_patt = None, ext_lab = None):
     if __name__ == 'RF_Library':
