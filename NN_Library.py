@@ -6,6 +6,7 @@ import torch
 import multiprocessing as mp
 import os
 import time as clock
+import sys
 
 from sklearn.model_selection import StratifiedKFold
 from sklearn.linear_model import SGDClassifier
@@ -15,6 +16,8 @@ from scipy.stats import ttest_ind
 from matplotlib import cm, colors
 from matplotlib.ticker import MaxNLocator
 from tqdm import tqdm
+from io import StringIO
+
 
 def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext_patt = None, ext_lab = None):
     start = clock.process_time()  
@@ -24,6 +27,7 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
     fold_accuracy = []
     fold_sensitivity = []
     fold_specificity = []
+    fold_loss = []
 
     kf = StratifiedKFold(n_splits = k, shuffle = True)
     indices = kf.split(patterns, labels)
@@ -40,6 +44,9 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
             if lab == label1:
                 N1_ext +=1
 
+    #definiamo una variabile per gestire le due tipologie di pattern
+    model_classes = np.array([label0,label1])
+
     for i, (train_index, test_index) in enumerate(indices):
 
         train_pattern = patterns[train_index]
@@ -48,15 +55,18 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
         test_pattern = patterns[test_index]
         test_labels = labels[test_index]
 
-        model = SGDClassifier(loss='log_loss',
+        old_stdout = sys.stdout
+        sys.stdout = mystdout = StringIO()
+
+        model = SGDClassifier(loss='perceptron',
                               penalty='l2', 
                               alpha=0.0001, 
                               l1_ratio=0.15, 
                               fit_intercept=True, 
                               max_iter=n_ep, 
-                              tol=0.00001, 
+                              tol=1e-6, 
                               shuffle=True, 
-                              verbose=0, 
+                              verbose=1, 
                               epsilon=0.1, 
                               n_jobs=None, 
                               random_state=None, 
@@ -73,6 +83,14 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
 
         model.fit(train_pattern, train_labels)
         models.append(model)
+
+        sys.stdout = old_stdout
+        loss_history = mystdout.getvalue()
+
+        for line in loss_history.split('\n'):
+            if(len(line.split("loss: ")) == 1):
+                continue
+            fold_loss.append(float(line.split("loss: ")[-1]))
 
         # Internal test
         test_prediction = model.predict(test_pattern)
@@ -98,6 +116,7 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
             if pred == label0 and test_labels[j] == label0:
                 temp_accuracy += 1./(temp_Npos+temp_Nneg)
                 temp_specificity += 1./temp_Nneg
+        
 
         fold_accuracy.append(temp_accuracy)
         fold_sensitivity.append(temp_sensitivity)
@@ -204,6 +223,7 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
         'Sens Err': np.std(fold_sensitivity),    #/np.sqrt(k),
         'Spec': np.mean(fold_specificity),
         'Spec Err': np.std(fold_specificity),    #/np.sqrt(k),
+        'Loss': np.mean(fold_loss),
         'Ext Acc': ext_accuracy,
         'Ext Sens': ext_sensitivity,
         'Ext Spec': ext_specificity,
@@ -236,6 +256,7 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
     accuracy_list = np.empty((len_ep, len_k, len_lr))
     sensitivity_list = np.empty((len_ep, len_k, len_lr))
     specificity_list = np.empty((len_ep, len_k, len_lr))
+    loss_list = np.empty((len_ep, len_k, len_lr))
 
     print("Begin Scanning...")
 
@@ -260,6 +281,7 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
                 accuracy_list[i_ep, i_k, i_lr] = res['Acc']
                 sensitivity_list[i_ep, i_k, i_lr] = res['Sens']
                 specificity_list[i_ep, i_k, i_lr] = res['Spec']
+                loss_list[i_ep, i_k, i_lr] = res['Loss']
 
     print("\nFinished Scanning!                                                \n")
 
@@ -267,6 +289,7 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
         'Acc List': accuracy_list,
         'Sens List': sensitivity_list,
         'Spec List': specificity_list,
+        'Loss List': loss_list,
     }
 
     return res
@@ -414,6 +437,9 @@ def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=N
 
 def gaussian(x,a,mean,sigma):
     return a*np.exp(-((x-mean)**2/(sigma**2))/2)
+
+def sigmoid(x):
+    return 1/(1+np.exp(-x))
 
 def hp_mode(mu1,mu2):
     if mu1 < mu2:
