@@ -513,18 +513,36 @@ def NN_kfold_par(k, par, patterns, labels, label0, label1, iter = 0, ext_patt = 
 
     return res
 
-def NN_parameters_scanner(hyperpar, par_range, patterns, labels, label0, label1, ext_patt = None, ext_lab = None):
-    # len_ep = len(epoch_range)
-    # len_k = len(k_range)
-    # len_lr = len(lr_range)
+def NN_parameters_scanner(par_all, par_range, patterns, labels, label0, label1, ext_patt = None, ext_lab = None):
+    
+    # NOTA: par_all deve deve essere del tipo:
+    # par_all = {
+    #         'loss': 'log_loss',
+    #         'alpha': 0.0001,
+    #         'max_iter': 10000,
+    #         'tol': 0.00001,
+    #         'learning_rate': 'constant',
+    #         'eta0': None, # def: 0.0
+    #     }
+    # Uno dei valori di par_all deve essere None, sarà quello su cui sarà fatto lo scanner
 
+    par_index = ['loss', 'alpha', 'max_iter', 'tol', 'learning_rate', 'eta0']
+    sp = None   # inizializing scanning parameter
+    for index in par_index:
+        if par_all[index] is None:
+            sp = index  # find the scanning parameter, varing in par_range
+            break
+    if sp is None:
+        print('ERROR IN SCANNING PARAMETER')
 
+    len_par = len(par_range)
 
-    accuracy_list = np.empty((len_ep, len_k, len_lr))
-    sensitivity_list = np.empty((len_ep, len_k, len_lr))
-    specificity_list = np.empty((len_ep, len_k, len_lr))
+    accuracy_list = np.empty(len_par)
+    sensitivity_list = np.empty(len_par)
+    specificity_list = np.empty(len_par)
 
-    print("Begin Scanning...")
+    
+    print("Begin Scanning...") # da fixare
 
     tot_iter = len_ep*len_k*len_lr
     progress = tqdm(total=tot_iter)
