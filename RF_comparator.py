@@ -216,7 +216,8 @@ if __name__ == '__main__':
 	pc_mat = pd.read_csv("eigenvectors.csv", sep=',', index_col=0)
 	pc_mat = pc_mat.to_numpy(dtype=np.float32)
 	feat_counter = np.zeros(len(train_patterns[0]))
-	signal = train_patterns.dot(pc_mat)
+	train_patterns = train_patterns.dot(pc_mat)
+	ext_patterns = ext_patterns.dot(pc_mat)
 
 	acc_list = []                   #CV metrics
 	sens_list = []
