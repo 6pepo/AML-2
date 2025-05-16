@@ -373,26 +373,26 @@ def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=N
     table[0,3].visible_edges = 'BTR'
 
     table.add_cell(1,1, width = 0.2, height = 0.2, text=f'Total\n\n{tot}', loc='center', fontproperties = fontproperties)
-    table.add_cell(1,2, width = 0.3, height = 0.2, text=f'Positive\n\n{conf_mat[0][0]+conf_mat[1][0]}', loc='center', fontproperties = fontproperties, facecolor = 'white')
-    table.add_cell(1,3, width = 0.3, height = 0.2, text=f'Negative\n\n{conf_mat[0][1]+conf_mat[1][1]}', loc='center', fontproperties = fontproperties, facecolor = 'white')
+    table.add_cell(1,2, width = 0.3, height = 0.2, text=f'Positive\n\n{(conf_mat[0][0]+conf_mat[1][0])/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
+    table.add_cell(1,3, width = 0.3, height = 0.2, text=f'Negative\n\n{(conf_mat[0][1]+conf_mat[1][1])/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
 
     table.add_cell(2,0, width = 0.1, height = 0.3, text='Classifier', loc='center', fontproperties = fontproperties, facecolor = 'white')
     table[2,0].set_text_props(rotation = 'vertical')
     table[2,0].visible_edges = 'LTR'
-    table.add_cell(2,1, width = 0.2, height = 0.3, text=f'Positive\n\n{conf_mat[0][0]+conf_mat[0][1]}', loc='center', fontproperties = fontproperties, facecolor = 'white')
-    table.add_cell(2,2, width = 0.3, height = 0.3, text=f'{conf_mat[0][0]:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[1])
+    table.add_cell(2,1, width = 0.2, height = 0.3, text=f'Positive\n\n{(conf_mat[0][0]+conf_mat[0][1])/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
+    table.add_cell(2,2, width = 0.3, height = 0.3, text=f'{conf_mat[0][0]/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[1])
     table[2,2].set_text_props(c = text_color[0][0])
-    table.add_cell(2,3, width = 0.3, height = 0.3, text=f'{conf_mat[0][1]:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[2])
+    table.add_cell(2,3, width = 0.3, height = 0.3, text=f'{conf_mat[0][1]/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[2])
     table[2,3].set_text_props(c = text_color[0][1])
     table.add_cell(2,4, width = 0.2, height = 0.3, text=f'Precision\n\n{precision:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
 
     table.add_cell(3,0, width = 0.1, height = 0.3, text='Output of', loc='center', fontproperties = fontproperties, facecolor = 'white')
     table[3,0].set_text_props(rotation = 'vertical')
     table[3,0].visible_edges = 'BLR'
-    table.add_cell(3,1, width = 0.2, height = 0.3, text=f'Negative\n\n{conf_mat[1][0]+conf_mat[1][1]}', loc='center', fontproperties = fontproperties, facecolor = 'white')
-    table.add_cell(3,2, width = 0.3, height = 0.3, text=f'{conf_mat[1][0]:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[3])
+    table.add_cell(3,1, width = 0.2, height = 0.3, text=f'Negative\n\n{(conf_mat[1][0]+conf_mat[1][1])/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
+    table.add_cell(3,2, width = 0.3, height = 0.3, text=f'{conf_mat[1][0]/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[3])
     table[3,2].set_text_props(c = text_color[1][0])
-    table.add_cell(3,3, width = 0.3, height = 0.3, text=f'{conf_mat[1][1]:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[4])
+    table.add_cell(3,3, width = 0.3, height = 0.3, text=f'{conf_mat[1][1]/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[4])
     table[3,3].set_text_props(c = text_color[1][1])
     table.add_cell(3,4, width = 0.2, height = 0.3)
 
@@ -504,17 +504,17 @@ def heatmap_plotter(ax, x, y, array, title, norm, cmap = cm.viridis, type = 'flo
 def squared_error(pred, target):
     return (pred - target)**2
 
-def der_squared_error(pred, target):
-    return 2*(pred - target)
+def step_squared_error(pred, target):
+    return 2*(pred - target)  * pred*(1-pred)
 
 def perceptron_loss(pred, target):
-    return max((0, -pred*target))
+    return abs(pred - target)
 
-def der_perceptron_loss(pred, target):
-    if pred*target >= 0.:
-        return 0
-    else:
-        return -target
+def step_perceptron_loss(pred, target):
+    return pred - target
+
+def heavside(x):
+    return np.where(x>0.5, 1, 0)
 
 class neuron:
 
@@ -526,13 +526,17 @@ class neuron:
         self.tol = tol
         random.seed(random_state)
 
+        self.conv_epoch = -1
+
         if loss == 'squaredError':
             self.lossFunc = squared_error
-            self.d_cost = der_squared_error
+            self.d_cost = step_squared_error
+            self.activ = expit
         
         elif loss == 'perceptron':
             self.lossFunc = perceptron_loss
-            self.d_cost = der_perceptron_loss
+            self.d_cost = step_perceptron_loss
+            self.activ = heavside
 
         else:
             print(f'{loss} loss function unknown')
@@ -540,19 +544,19 @@ class neuron:
     def fit(self, patterns, target):
         self.n_feat = len(patterns[0])
         self.train_patt = patterns
-        self.train_lab = np.where(target == self.labpos, 1., -1.)
+        self.train_lab = np.where(target == self.labpos, 1., 0.)
         self.weights = np.empty(self.n_feat)
         for i in range(self.n_feat):
-            self.weights[i] = random.random() * self.lr
-        self.bias = random.random() * self.lr
+            self.weights[i] = (random.random() - 0.5)* self.lr
+        self.bias = (random.random() - 0.5)* self.lr
         
         self.loss_list = []
         self.conv_counter = 0
 
         for i in range(self.epochs):
             # Forward Propagation
-            self.t = self.weights.dot(self.train_patt.transpose() + self.bias)      # Weighted sum
-            self.temp_pred = 2*expit(self.t) - 1.           # Sigmoid extended to (-1, 1) to work with perceptron
+            self.weighted_sum = self.weights.dot(self.train_patt.transpose() + self.bias)
+            self.temp_pred = self.activ(self.weighted_sum)
             self.epoch_loss = 0.
 
             for k, tpred in enumerate(self.temp_pred):
@@ -561,12 +565,10 @@ class neuron:
                 self.epoch_loss += self.loss
 
                 # Back Propagation
-                self.step = self.d_cost(tpred, self.train_lab[k]) * 2*expit(self.t[k])*(1-expit(self.t[k]))
+                self.step = self.d_cost(tpred, self.train_lab[k])
                 for j in range(self.n_feat):
                     self.weights[j] -= self.lr * self.step * self.train_patt[k, j]
                 self.bias -= self.lr * self.step
-            
-            self.epoch_loss /= len(self.train_lab)
 
             # Convergence Check
             if self.conv_counter < 5 and i>0:
@@ -581,5 +583,5 @@ class neuron:
             self.loss_list.append(self.epoch_loss)
 
     def predict(self, patterns):
-        return np.where(self.weights.dot(patterns.transpose()) + self.bias > 0, self.labpos, self.labneg) 
+        return np.where(self.activ(self.weights.dot(patterns.transpose()) + self.bias) > 0.5, self.labpos, self.labneg) 
 
