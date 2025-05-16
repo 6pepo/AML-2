@@ -6,10 +6,12 @@ import torch
 import multiprocessing as mp
 import os
 import time as clock
+import random
 
 from sklearn.model_selection import StratifiedKFold
 from scipy.optimize import curve_fit
 from scipy.stats import ttest_ind
+from scipy.special import expit
 from matplotlib import cm, colors
 from matplotlib.ticker import MaxNLocator
 from tqdm import tqdm
@@ -488,3 +490,86 @@ def heatmap_plotter(ax, x, y, array, title, norm, cmap = cm.viridis):
                 ax.text(x[col], y[row], "{:.2f}".format(array[row,col]), ha='center', va='center', color=cmap(0.))
 
     return colormesh
+
+def squared_error(pred, target):
+    return (pred - target)**2
+
+def der_squared_error(pred, target):
+    return 2*(pred - target)
+
+def perceptron_loss(pred, target):
+    return max((0, -pred*target))
+
+def der_perceptron_loss(pred, target):
+    if pred*target >= 0.:
+        return 0
+    else:
+        return -target
+
+class neuron:
+
+    def __init__(self, labneg, labpos, max_epochs, learning_rate, tol = 1e-6, loss = 'squaredError', random_state = None):
+        self.labneg = labneg
+        self.labpos = labpos
+        self.epochs = max_epochs
+        self.lr = learning_rate
+        self.tol = tol
+        random.seed(random_state)
+
+        if loss == 'squaredError':
+            self.lossFunc = squared_error
+            self.d_cost = der_squared_error
+        
+        elif loss == 'perceptron':
+            self.lossFunc = perceptron_loss
+            self.d_cost = der_perceptron_loss
+
+        else:
+            print(f'{loss} loss function unknown')
+
+    def fit(self, patterns, target):
+        self.n_feat = len(patterns[0])
+        self.train_patt = patterns
+        self.train_lab = np.where(target == self.labpos, 1., -1.)
+        self.weights = np.empty(self.n_feat)
+        for i in range(self.n_feat):
+            self.weights[i] = random.random() * self.lr
+        self.bias = random.random() * self.lr
+        
+        self.loss_list = []
+        self.conv_counter = 0
+
+        for i in range(self.epochs):
+            # Forward Propagation
+            self.t = self.weights.dot(self.train_patt.transpose() + self.bias)      # Weighted sum
+            self.temp_pred = 2*expit(self.t) - 1.           # Sigmoid extended to (-1, 1) to work with perceptron
+            self.epoch_loss = 0.
+
+            for k, tpred in enumerate(self.temp_pred):
+                # Error Computation
+                self.loss = self.lossFunc(tpred, self.train_lab[k])
+                self.epoch_loss += self.loss
+
+                # Back Propagation
+                self.step = self.d_cost(tpred, self.train_lab[k]) * 2*expit(self.t[k])*(1-expit(self.t[k]))
+                for j in range(self.n_feat):
+                    self.weights[j] -= self.lr * self.step * self.train_patt[k, j]
+                self.bias -= self.lr * self.step
+            
+            self.epoch_loss /= len(self.train_lab)
+
+            # Convergence Check
+            if self.conv_counter < 5 and i>0:
+                if np.abs(self.epoch_loss - self.loss_list[i-1]) < self.tol:
+                    self.conv_counter += 1
+                else:
+                    self.conv_counter = 0
+            
+            if self.conv_counter == 5:
+                self.conv_epoch = i
+
+            self.loss_list.append(self.epoch_loss)
+
+    def predict(self, patterns):
+        return np.where(self.weights.dot(patterns.transpose()) + self.bias > 0, self.labpos, self.labneg) 
+
