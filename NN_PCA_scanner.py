@@ -17,8 +17,12 @@ if __name__ == '__main__':
     mother_directory = os.path.dirname(script_directory)
     dataset_path = os.path.join(mother_directory, 'Dataset')
 
+    pc_mat = pd.read_csv(dataset_path+'/eigenvectors.csv', sep=',', index_col=0)
+    pc_mat = pc_mat.to_numpy()
+
     patterns = pd.read_csv(dataset_path+'/iono_trainPatt.csv', header=0, index_col=0)
     patterns = patterns.to_numpy()
+    patterns = patterns.dot(pc_mat)
     patterns = NN.sigmoid(patterns) #normalize the data with a sigmoid function
     labels = pd.read_csv(dataset_path+'/iono_trainLab.csv', header=0, index_col=0)
     labels = np.ravel(labels.to_numpy())
@@ -43,14 +47,14 @@ if __name__ == '__main__':
 
     res = NN.NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, label1)
     
-    if not os.path.exists(script_directory+f'/NN Not PCA'):
-        os.makedirs(script_directory+f'/NN Not PCA')
+    if not os.path.exists(script_directory+f'/NN PCA'):
+        os.makedirs(script_directory+f'/NN PCA')
     
-    if not os.path.exists(script_directory+f'/NN Not PCA/score_heatmaps'):
-        os.makedirs(script_directory+f'/NN Not PCA/score_heatmaps')
+    if not os.path.exists(script_directory+f'/NN PCA/score_heatmaps'):
+        os.makedirs(script_directory+f'/NN PCA/score_heatmaps')
     
-    if not os.path.exists(script_directory+f'/NN Not PCA/loss_heatmaps'):
-        os.makedirs(script_directory+f'/NN Not PCA/loss_heatmaps')
+    if not os.path.exists(script_directory+f'/NN PCA/loss_heatmaps'):
+        os.makedirs(script_directory+f'/NN PCA/loss_heatmaps')
     
     sens = res['Sens List']
     spec = res['Spec List']
@@ -67,7 +71,7 @@ if __name__ == '__main__':
         
         fig.suptitle(f'{k}-Fold')
         fig.colorbar(spec_colormesh,  orientation='vertical')
-        fig.savefig(script_directory+f'/NN Not PCA/score_heatmaps/heatmap_{k}_fold.png', dpi=240)
+        fig.savefig(script_directory+f'/NN PCA/score_heatmaps/heatmap_{k}_fold.png', dpi=240)
         plt.close(fig)
                 
         fig_loss, ax_loss = plt.subplots( figsize=(16,9))
@@ -76,7 +80,7 @@ if __name__ == '__main__':
 
         fig_loss.suptitle(f'{k}-Fold')
         fig_loss.colorbar(loss_colormesh,  orientation='vertical')
-        fig_loss.savefig(script_directory+f'/NN Not PCA/loss_heatmaps/heatmap_{k}_fold.png', dpi=240)
+        fig_loss.savefig(script_directory+f'/NN PCA/loss_heatmaps/heatmap_{k}_fold.png', dpi=240)
         plt.close(fig_loss)
 
     print("CPU Time:" + str(round((clock.process_time() - start_cpu)/60)) + "'" + str(round((clock.process_time() - start_cpu)%60)) + "''")

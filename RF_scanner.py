@@ -11,9 +11,13 @@ if __name__ == '__main__':
 
     start_cpu = clock.process_time()
 
-    patterns = pd.read_csv("iono_trainPatt.csv", header=0, index_col=0)
+    script_directory = os.path.dirname(os.path.abspath(__file__))
+    mother_directory = os.path.dirname(script_directory)
+    dataset_path = os.path.join(mother_directory, 'Dataset')
+
+    patterns = pd.read_csv(dataset_path+"/iono_trainPatt.csv", header=0, index_col=0)
     patterns = patterns.to_numpy()
-    labels = pd.read_csv("iono_trainLab.csv", header=0, index_col=0)
+    labels = pd.read_csv(dataset_path+"/iono_trainLab.csv", header=0, index_col=0)
     labels = np.ravel(labels.to_numpy())
     label0 = 'b'
     label1 = 'g'
@@ -38,8 +42,8 @@ if __name__ == '__main__':
 
     res = RF.RF_binary_scanner(tree_range, k_range, n_seeds, patterns, labels, label0, label1)
     
-    if not os.path.exists(f'{n_seeds} Random Seeds Not PCA'):
-        os.makedirs(f'{n_seeds} Random Seeds Not PCA')
+    if not os.path.exists(script_directory+f'/{n_seeds} Random Seeds Not PCA'):
+        os.makedirs(script_directory+f'/{n_seeds} Random Seeds Not PCA')
     
     # Single n_fold plot with slider
     for i,k in enumerate(k_range):
@@ -60,7 +64,7 @@ if __name__ == '__main__':
         ax2[1].set_xlabel('Number of Trees')
         fig2.suptitle(f'{k} Folds')
     
-        fig2.savefig(f'{n_seeds} Random Seeds Not PCA/{k}_folds.png', dpi=120)
+        fig2.savefig(script_directory+f'/{n_seeds} Random Seeds Not PCA/{k}_folds.png', dpi=120)
 
     # Heatmaps n_fold - n_trees
     fig, ax = plt.subplots(1,2, figsize=(16,9))
@@ -72,7 +76,7 @@ if __name__ == '__main__':
     spec_colormesh = RF.heatmap_plotter(ax[1], k_range, tree_range, res['Spec List'], "Specificity", normalization, cm.viridis)
     
     fig.colorbar(spec_colormesh,  orientation='vertical')
-    fig.savefig(f'{n_seeds} Random Seeds Not PCA/heatmaps.png', dpi=120)
+    fig.savefig(script_directory+f'/{n_seeds} Random Seeds Not PCA/heatmaps.png', dpi=120)
 
     print("CPU Time:" + str(round((clock.process_time() - start_cpu)/60)) + "'" + str(round((clock.process_time() - start_cpu)%60)) + "''")
     plt.show()

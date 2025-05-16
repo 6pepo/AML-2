@@ -15,7 +15,6 @@ def h_line(x,c):
     return np.ones(len(x))*c
 
 if __name__ == '__main__':
-	mp.freeze_support()
 
 	start = clock.time()
 
@@ -49,14 +48,6 @@ if __name__ == '__main__':
 	ext_patterns = ext_patterns.to_numpy()
 	ext_labels = ext_labels.to_numpy().ravel()
 
-	NUMBER_OF_PROCESSES = int(os.cpu_count()/2)
-			
-	task_queue = mp.Queue()
-	done_queue = mp.Queue()
-
-	for i in range(NUMBER_OF_PROCESSES):
-			mp.Process(target=RF.worker, args=(task_queue, done_queue)).start()
-
 	#NOT PCA
 	feat_counter = np.zeros(len(train_patterns[0]))
 
@@ -86,11 +77,8 @@ if __name__ == '__main__':
 	start_non_pca = clock.process_time()
 	cpu_time_non_pca = []
 
-	for i in range(n_iter):
-		task_queue.put((RF.RF_binary_kfold, (n_trees, k, train_patterns, train_labels, label0, label1, i, ext_patterns, ext_labels)))
-
 	for n in range(n_iter):
-		res = done_queue.get()
+		res = RF.RF_binary_kfold(n_trees, k, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
 
 		acc_list.append(res['Acc'])
 		sens_list.append(res['Sens'])
@@ -173,7 +161,6 @@ if __name__ == '__main__':
 	print("Tot CPU Time:" + str(np.sum(cpu_time_non_pca)))
 	print("\n")
 
-	#da sistemare la figsize e normalizzare le entrate
 	fig_baseCM, ax_baseCM = RF.confMat_binary_plot(tot_conf_mat, title="Confusion Matrix - non PCA")
 	fig_baseCM.savefig(script_directory+f'/nonPCA Confusion Matrix.png', dpi=120)
 
@@ -250,11 +237,8 @@ if __name__ == '__main__':
 	start_pca = clock.process_time()
 	cpu_time_pca = []
 
-	for i in range(n_iter):
-		task_queue.put((RF.RF_binary_kfold, (n_trees, k, train_patterns, train_labels, label0, label1, i, ext_patterns, ext_labels)))
-
 	for n in range(n_iter):
-		res = done_queue.get()
+		res = RF.RF_binary_kfold(n_trees, k, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
 
 		acc_list.append(res['Acc'])
 		sens_list.append(res['Sens'])
@@ -335,7 +319,6 @@ if __name__ == '__main__':
 	print("Tot CPU Time:" + str(np.sum(cpu_time_pca)))
 	print("\n")
 
-	#da sistemare la figsize e normalizzare le entrate
 	fig_PCACM, ax_PCACM = RF.confMat_binary_plot(PCA_conf_mat, title="Confusion matrix - PCA")
 	fig_PCACM.savefig(script_directory+f'/PCA Confusion Matrix.png', dpi=120)
 
@@ -377,9 +360,6 @@ if __name__ == '__main__':
 	print("Sensitivity: {:.2%} +- {:.2%} Rel: {:.2%}".format(PCA_sens_bspec, PCA_sens_bspec_std, PCA_sens_bspec_std/PCA_sens_bspec))
 	print("Specificity: {:.2%} +- {:.2%} Rel: {:.2%}".format(PCA_spec_bspec, PCA_spec_bspec_std, PCA_spec_bspec_std/PCA_spec_bspec))
 	print("\n")
-
-	for i in range(NUMBER_OF_PROCESSES):
-		task_queue.put('STOP')
 
 	pca_label = 'PCA'
 	not_pca_label = 'NON PCA'
@@ -527,6 +507,6 @@ if __name__ == '__main__':
 	time_ax.grid(True)
 	time_ax.legend(loc='best', fontsize='large')
 	time_ax.set_title('CPU Time')
-	time_fig.savefig(script_directory+f'/CPU_time_iterations_MP.png', dpi=120)
+	time_fig.savefig(script_directory+f'/CPU_time_iterations.png', dpi=120)
 
 	plt.show()

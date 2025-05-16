@@ -343,7 +343,7 @@ def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=N
     if accuracy == None:
         accuracy = (conf_mat[0][0] + conf_mat[1][1]) / tot
     F1score = 2. * (precision * sensitivity) / (precision + sensitivity)
-            
+    
     norm = colors.Normalize(vmin = 0, vmax = np.max(conf_mat))
     normalized = norm((0., conf_mat[0][0], conf_mat[0][1], conf_mat[1][0], conf_mat[1][1]))
     cell_color = cm.viridis(normalized)

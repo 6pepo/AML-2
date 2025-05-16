@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import RF_Library as RF
+import NN_Library as NN
 import time as clock
 import multiprocessing as mp
 import torch
@@ -15,7 +15,6 @@ def h_line(x,c):
     return np.ones(len(x))*c
 
 if __name__ == '__main__':
-	mp.freeze_support()
 
 	start = clock.time()
 
@@ -23,15 +22,17 @@ if __name__ == '__main__':
 	mother_directory = os.path.dirname(script_directory)
 	dataset_path = os.path.join(mother_directory, 'Dataset')
 
-	n_iter = 100
+	n_iter = 10000
 
 	# Iperparameters non-PCA
 	k = 5
-	n_trees = 210
+	lr = 1e-4
+	epoch = 60
 
 	# Iperparameters PCA
-	k_PCA = 6
-	n_trees_PCA = 210
+	k_PCA = 5
+	lr_PCA = 1e-4
+	epoch_PCA = 60
 
 	# Training Set
 	train_patterns = pd.read_csv(dataset_path+"/iono_trainPatt.csv", header=0, index_col=0)
@@ -49,17 +50,7 @@ if __name__ == '__main__':
 	ext_patterns = ext_patterns.to_numpy()
 	ext_labels = ext_labels.to_numpy().ravel()
 
-	NUMBER_OF_PROCESSES = int(os.cpu_count()/2)
-			
-	task_queue = mp.Queue()
-	done_queue = mp.Queue()
-
-	for i in range(NUMBER_OF_PROCESSES):
-			mp.Process(target=RF.worker, args=(task_queue, done_queue)).start()
-
 	#NOT PCA
-	feat_counter = np.zeros(len(train_patterns[0]))
-
 	acc_list = []
 	sens_list = []
 	spec_list = []
@@ -86,11 +77,8 @@ if __name__ == '__main__':
 	start_non_pca = clock.process_time()
 	cpu_time_non_pca = []
 
-	for i in range(n_iter):
-		task_queue.put((RF.RF_binary_kfold, (n_trees, k, train_patterns, train_labels, label0, label1, i, ext_patterns, ext_labels)))
-
 	for n in range(n_iter):
-		res = done_queue.get()
+		res = NN.NN_binary_kfold(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
 
 		acc_list.append(res['Acc'])
 		sens_list.append(res['Sens'])
@@ -113,26 +101,12 @@ if __name__ == '__main__':
 		spec_ext_list.append(res['Ext Spec'])
 		conf_mat_list.append(res['Conf Mat'])
 
-	# Counting root feature in decision Trees
-		for model in res['Models']:
-			for estim in model.estimators_:
-				feat_counter[estim.tree_.feature[0]] += 1
-
 		cpu_time_non_pca.append(res['Time'])
 
 		#progress bar
 		progress.update(1)
 
 	print('Done!')
-
-
-	prim_feat_trees = np.argsort(feat_counter)[::-1]
-	print("Most frequent argument in tree roots:")
-	print("F_num\tCount")
-	for i in range(10):
-		print("{}\t{}".format(prim_feat_trees[i], feat_counter[prim_feat_trees[i]]))
-	print(np.sum(feat_counter))
-	print('\n')
 
 	base_acc_stat = acc_list
 	base_sens_stat = sens_list
@@ -173,8 +147,7 @@ if __name__ == '__main__':
 	print("Tot CPU Time:" + str(np.sum(cpu_time_non_pca)))
 	print("\n")
 
-	#da sistemare la figsize e normalizzare le entrate
-	fig_baseCM, ax_baseCM = RF.confMat_binary_plot(tot_conf_mat, title="Confusion Matrix - non PCA")
+	fig_baseCM, ax_baseCM = NN.confMat_binary_plot(tot_conf_mat, title="Confusion Matrix - non PCA")
 	fig_baseCM.savefig(script_directory+f'/nonPCA Confusion Matrix.png', dpi=120)
 
 	tot_acc_bacc = np.mean(base_acc_bacc_list)
@@ -220,7 +193,6 @@ if __name__ == '__main__':
 	#PCA 
 	pc_mat = pd.read_csv(dataset_path+"/eigenvectors.csv", sep=',', index_col=0)
 	pc_mat = pc_mat.to_numpy(dtype=np.float32)
-	feat_counter = np.zeros(len(train_patterns[0]))
 	train_patterns = train_patterns.dot(pc_mat)
 	ext_patterns = ext_patterns.dot(pc_mat)
 
@@ -250,11 +222,8 @@ if __name__ == '__main__':
 	start_pca = clock.process_time()
 	cpu_time_pca = []
 
-	for i in range(n_iter):
-		task_queue.put((RF.RF_binary_kfold, (n_trees, k, train_patterns, train_labels, label0, label1, i, ext_patterns, ext_labels)))
-
 	for n in range(n_iter):
-		res = done_queue.get()
+		res = NN.NN_binary_kfold(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
 
 		acc_list.append(res['Acc'])
 		sens_list.append(res['Sens'])
@@ -277,25 +246,12 @@ if __name__ == '__main__':
 		spec_ext_list.append(res['Ext Spec'])
 		conf_mat_list.append(res['Conf Mat'])
 
-		# Counting root feature in decision Trees
-		for model in res['Models']:
-			for estim in model.estimators_:
-				feat_counter[estim.tree_.feature[0]] += 1
-
 		cpu_time_pca.append(res['Time'])
 
 		#progress bar
 		pca_progress.update(1)
 
 	print('Done!                                  ')
-
-	prim_feat_trees = np.argsort(feat_counter)[::-1]
-	print("Most frequent argument in tree roots:")
-	print("F_num\tCount")
-	for i in range(10):
-		print("{}\t{}".format(prim_feat_trees[i], feat_counter[prim_feat_trees[i]]))
-	print(np.sum(feat_counter))
-	print('\n')
 
 	PCA_acc_stat = acc_list
 	PCA_sens_stat = sens_list
@@ -335,8 +291,7 @@ if __name__ == '__main__':
 	print("Tot CPU Time:" + str(np.sum(cpu_time_pca)))
 	print("\n")
 
-	#da sistemare la figsize e normalizzare le entrate
-	fig_PCACM, ax_PCACM = RF.confMat_binary_plot(PCA_conf_mat, title="Confusion matrix - PCA")
+	fig_PCACM, ax_PCACM = NN.confMat_binary_plot(PCA_conf_mat, title="Confusion matrix - PCA")
 	fig_PCACM.savefig(script_directory+f'/PCA Confusion Matrix.png', dpi=120)
 
 	PCA_acc_bacc = np.mean(PCA_acc_bacc_list)
@@ -378,9 +333,6 @@ if __name__ == '__main__':
 	print("Specificity: {:.2%} +- {:.2%} Rel: {:.2%}".format(PCA_spec_bspec, PCA_spec_bspec_std, PCA_spec_bspec_std/PCA_spec_bspec))
 	print("\n")
 
-	for i in range(NUMBER_OF_PROCESSES):
-		task_queue.put('STOP')
-
 	pca_label = 'PCA'
 	not_pca_label = 'NON PCA'
 
@@ -403,71 +355,71 @@ if __name__ == '__main__':
 			os.makedirs(script_directory+f'/distributions/external_test/best_model/best_specificity')  
 
 	print('Cross Validation Statistics:')
-	cv_maj_acc_fig, cv_maj_acc_ax, base_acc_res = RF.plot_histo_gaus_stat(base_acc_stat, not_pca_label, PCA_acc_stat, pca_label)
+	cv_maj_acc_fig, cv_maj_acc_ax, base_acc_res = NN.plot_histo_gaus_stat(base_acc_stat, not_pca_label, PCA_acc_stat, pca_label)
 	cv_maj_acc_ax.set_title('Accuracy Distributions Cross Validation Majority Vote')
 	cv_maj_acc_fig.savefig(script_directory+f'/distributions/cross_validation/majority/accuracy_dist_maj_cv.png', dpi=120)
 	print('Accuracy t-stat: {:.2}, p-value: {:.2}'.format(base_acc_res.statistic, base_acc_res.pvalue))
-	cv_maj_sens_fig, cv_maj_sens_ax, base_sens_res = RF.plot_histo_gaus_stat(base_sens_stat, not_pca_label, PCA_sens_stat, pca_label)
+	cv_maj_sens_fig, cv_maj_sens_ax, base_sens_res = NN.plot_histo_gaus_stat(base_sens_stat, not_pca_label, PCA_sens_stat, pca_label)
 	cv_maj_sens_ax.set_title('Sensitivity Distribution Cross Validation Majority Vote')
 	cv_maj_sens_fig.savefig(script_directory+f'/distributions/cross_validation/majority/sensitivity_dist_maj_cv.png', dpi=120)
 	print('Sensitivity t-stat: {:.2}, p-value: {:.2}'.format(base_sens_res.statistic, base_sens_res.pvalue))
-	cv_maj_spec_fig, cv_maj_spec_ax, base_spec_res = RF.plot_histo_gaus_stat(base_spec_stat, not_pca_label, PCA_spec_stat, pca_label)
+	cv_maj_spec_fig, cv_maj_spec_ax, base_spec_res = NN.plot_histo_gaus_stat(base_spec_stat, not_pca_label, PCA_spec_stat, pca_label)
 	cv_maj_spec_ax.set_title('Specificity Distribution Cross Validation Majority Vote')
 	cv_maj_spec_fig.savefig(script_directory+f'/distributions/cross_validation/majority/specificity_dist_maj_cv.png', dpi=120)
 	print('Specificity t-stat: {:.2}, p-value: {:.2}\n'.format(base_spec_res.statistic, base_spec_res.pvalue))
 
 	print('External Test (Majority vote) Statistics:')
-	ext_maj_acc_fig, ext_maj_acc_ax, ext_acc_res = RF.plot_histo_gaus_stat(base_acc_ext_stat, not_pca_label, PCA_acc_ext_stat, pca_label)
+	ext_maj_acc_fig, ext_maj_acc_ax, ext_acc_res = NN.plot_histo_gaus_stat(base_acc_ext_stat, not_pca_label, PCA_acc_ext_stat, pca_label)
 	ext_maj_acc_ax.set_title('Accuracy Distribution External Test Majority Vote')
 	ext_maj_acc_fig.savefig(script_directory+f'/distributions/external_test/majority/accuracy_dist_maj_ext.png', dpi=120)
 	print('Accuracy t-stat: {:.2}, p-value: {:.2}'.format(ext_acc_res.statistic, ext_acc_res.pvalue))
-	ext_maj_sens_fig, ext_maj_sens_ax, ext_sens_res = RF.plot_histo_gaus_stat(base_sens_ext_stat, not_pca_label, PCA_sens_ext_stat, pca_label)
+	ext_maj_sens_fig, ext_maj_sens_ax, ext_sens_res = NN.plot_histo_gaus_stat(base_sens_ext_stat, not_pca_label, PCA_sens_ext_stat, pca_label)
 	ext_maj_sens_ax.set_title('Sensitivity Distribution External Test Majority Vote')
 	ext_maj_sens_fig.savefig(script_directory+f'/distributions/external_test/majority/sensitivity_dist_maj_ext.png', dpi=120)
 	print('Sensitivity t-stat: {:.2}, p-value: {:.2}'.format(ext_sens_res.statistic, ext_sens_res.pvalue))
-	ext_maj_spec_fig, ext_maj_spec_ax, ext_spec_res = RF.plot_histo_gaus_stat(base_spec_ext_stat, not_pca_label, PCA_spec_ext_stat, pca_label)
+	ext_maj_spec_fig, ext_maj_spec_ax, ext_spec_res = NN.plot_histo_gaus_stat(base_spec_ext_stat, not_pca_label, PCA_spec_ext_stat, pca_label)
 	ext_maj_spec_ax.set_title('Specificity Distribution External Test Majority Vote')
 	ext_maj_spec_fig.savefig(script_directory+f'/distributions/external_test/majority/specificity_dist_maj_ext.png', dpi=120)
 	print('Specificity t-stat: {:.2}, p-value: {:.2}\n'.format(ext_spec_res.statistic, ext_spec_res.pvalue))
 
 	print('External Test (Best Accuracy in Training) Statistics:')
-	ext_bacc_acc_fig, ext_bacc_acc_ax, bacc_acc_res = RF.plot_histo_gaus_stat(base_acc_bacc_list, not_pca_label, PCA_acc_bacc_list, pca_label)
+	ext_bacc_acc_fig, ext_bacc_acc_ax, bacc_acc_res = NN.plot_histo_gaus_stat(base_acc_bacc_list, not_pca_label, PCA_acc_bacc_list, pca_label)
 	ext_bacc_acc_ax.set_title('Accuracy Distribution External Test Best Accuracy in Training')
 	ext_bacc_acc_fig.savefig(script_directory+f'/distributions/external_test/best_model/best_accuracy/accuracy_dist_bacc_ext.png', dpi=120)
 	print('Accuracy t-stat: {:.2}, p-value: {:.2}'.format(bacc_acc_res.statistic, bacc_acc_res.pvalue))
-	ext_bacc_sens_fig, ext_bacc_sens_ax, bacc_sens_res = RF.plot_histo_gaus_stat(base_sens_bacc_list, not_pca_label, PCA_sens_bacc_list, pca_label)
+	ext_bacc_sens_fig, ext_bacc_sens_ax, bacc_sens_res = NN.plot_histo_gaus_stat(base_sens_bacc_list, not_pca_label, PCA_sens_bacc_list, pca_label)
 	ext_bacc_sens_ax.set_title('Sensitivity Distribution External Test Best Accuracy in Training')
 	ext_bacc_sens_fig.savefig(script_directory+f'/distributions/external_test/best_model/best_accuracy/sensitivity_dist_bacc_ext.png', dpi=120)
 	print('Sensitivity t-stat: {:.2}, p-value: {:.2}'.format(bacc_sens_res.statistic, bacc_sens_res.pvalue))
-	ext_bacc_spec_fig, ext_bacc_spec_ax, bacc_spec_res = RF.plot_histo_gaus_stat(base_spec_bacc_list, not_pca_label, PCA_spec_bacc_list, pca_label)
+	ext_bacc_spec_fig, ext_bacc_spec_ax, bacc_spec_res = NN.plot_histo_gaus_stat(base_spec_bacc_list, not_pca_label, PCA_spec_bacc_list, pca_label)
 	ext_bacc_spec_ax.set_title('Specificity Distribution External Test Best Accuracy in Training')
 	ext_bacc_spec_fig.savefig(script_directory+f'/distributions/external_test/best_model/best_accuracy/specificity_dist_bacc_ext.png', dpi=120)
 	print('Specificity t-stat: {:.2}, p-value: {:.2}\n'.format(bacc_spec_res.statistic, bacc_spec_res.pvalue))
 
 	print('External Test (Best Sensitivity in Training) Statistics:')
-	ext_bsens_acc_fig, ext_bsens_acc_ax, bsens_acc_res = RF.plot_histo_gaus_stat(base_acc_bsens_list, not_pca_label, PCA_acc_bsens_list, pca_label)
+	ext_bsens_acc_fig, ext_bsens_acc_ax, bsens_acc_res = NN.plot_histo_gaus_stat(base_acc_bsens_list, not_pca_label, PCA_acc_bsens_list, pca_label)
 	ext_bsens_acc_ax.set_title('Accuracy Distribution External Test Best Sensitivity in Training')
 	ext_bsens_acc_fig.savefig(script_directory+f'/distributions/external_test/best_model/best_sensitivity/accuracy_dist_bsens_ext.png', dpi=120)
 	print('Accuracy t-stat: {:.2}, p-value: {:.2}'.format(bsens_acc_res.statistic, bsens_acc_res.pvalue))
-	ext_bsens_sens_fig, ext_bsens_sens_ax, bsens_sens_res = RF.plot_histo_gaus_stat(base_sens_bsens_list, not_pca_label, PCA_sens_bsens_list, pca_label)
+	ext_bsens_sens_fig, ext_bsens_sens_ax, bsens_sens_res = NN.plot_histo_gaus_stat(base_sens_bsens_list, not_pca_label, PCA_sens_bsens_list, pca_label)
 	ext_bsens_sens_ax.set_title('Sensitivity Distribution External Test Best Sensitivity in Training')
 	ext_bsens_sens_fig.savefig(script_directory+f'/distributions/external_test/best_model/best_sensitivity/sensitivity_dist_bsens_ext.png', dpi=120)
 	print('Sensitivity t-stat: {:.2}, p-value: {:.2}'.format(bsens_sens_res.statistic, bsens_sens_res.pvalue))
-	ext_bsens_spec_fig, ext_bsens_spec_ax, bsens_spec_res = RF.plot_histo_gaus_stat(base_spec_bsens_list, not_pca_label, PCA_spec_bsens_list, pca_label)
+	ext_bsens_spec_fig, ext_bsens_spec_ax, bsens_spec_res = NN.plot_histo_gaus_stat(base_spec_bsens_list, not_pca_label, PCA_spec_bsens_list, pca_label)
 	ext_bsens_spec_ax.set_title('Specificity Distribution External Test Best Sensitivity in Training')
 	ext_bsens_spec_fig.savefig(script_directory+f'/distributions/external_test/best_model/best_sensitivity/specificity_dist_bsens_ext.png', dpi=120)
 	print('Specificity t-stat: {:.2}, p-value: {:.2}\n'.format(bsens_spec_res.statistic, bsens_spec_res.pvalue))
 
 	print('External Test (Best Specificity in Training) Statistics:')
-	ext_bspec_acc_fig, ext_bspec_acc_ax, bspec_acc_res = RF.plot_histo_gaus_stat(base_acc_bspec_list, not_pca_label, PCA_acc_bspec_list, pca_label)
+	ext_bspec_acc_fig, ext_bspec_acc_ax, bspec_acc_res = NN.plot_histo_gaus_stat(base_acc_bspec_list, not_pca_label, PCA_acc_bspec_list, pca_label)
 	ext_bspec_acc_ax.set_title('Accuracy Distribution External Test Best Specificity in Training')
 	ext_bspec_acc_fig.savefig(script_directory+f'/distributions/external_test/best_model/best_specificity/accuracy_dist_bspec_ext.png', dpi=120)
 	print('Accuracy t-stat: {:.2}, p-value: {:.2}'.format(bspec_acc_res.statistic, bspec_acc_res.pvalue))
-	ext_bspec_sens_fig, ext_bspec_sens_ax, bspec_sens_res = RF.plot_histo_gaus_stat(base_sens_bspec_list, not_pca_label, PCA_sens_bspec_list, pca_label)
+	ext_bspec_sens_fig, ext_bspec_sens_ax, bspec_sens_res = NN.plot_histo_gaus_stat(base_sens_bspec_list, not_pca_label, PCA_sens_bspec_list, pca_label)
 	ext_bspec_sens_ax.set_title('Sensitivity Distribution External Test Best Specificity in Training')
 	ext_bspec_sens_fig.savefig(script_directory+f'/distributions/external_test/best_model/best_specificity/sensitivity_dist_bspec_ext.png', dpi=120)
 	print('Sensitivity t-stat: {:.2}, p-value: {:.2}'.format(bspec_sens_res.statistic, bspec_sens_res.pvalue))
-	ext_bspec_spec_fig, ext_bspec_spec_ax, bspec_spec_res = RF.plot_histo_gaus_stat(base_spec_bspec_list, not_pca_label, PCA_spec_bspec_list, pca_label)
+	ext_bspec_spec_fig, ext_bspec_spec_ax, bspec_spec_res = NN.plot_histo_gaus_stat(base_spec_bspec_list, not_pca_label, PCA_spec_bspec_list, pca_label)
 	ext_bspec_spec_ax.set_title('Specificity Distribution External Test Best Specificity in Training')
 	ext_bspec_spec_fig.savefig(script_directory+f'/distributions/external_test/best_model/best_specificity/specificity_dist_bspec_ext.png', dpi=120)
 	print('Specificity t-stat: {:.2}, p-value: {:.2}\n'.format(bspec_spec_res.statistic, bspec_spec_res.pvalue))
@@ -527,6 +479,6 @@ if __name__ == '__main__':
 	time_ax.grid(True)
 	time_ax.legend(loc='best', fontsize='large')
 	time_ax.set_title('CPU Time')
-	time_fig.savefig(script_directory+f'/CPU_time_iterations_MP.png', dpi=120)
+	time_fig.savefig(script_directory+f'/CPU_time_iterations.png', dpi=120)
 
 	plt.show()
