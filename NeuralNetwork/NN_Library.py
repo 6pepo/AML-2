@@ -28,6 +28,7 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
     fold_accuracy = []
     fold_sensitivity = []
     fold_specificity = []
+    fold_precision = []
     fold_loss = []
 
     kf = StratifiedKFold(n_splits = k, shuffle = True)
@@ -44,9 +45,6 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
                 N0_ext +=1
             if lab == label1:
                 N1_ext +=1
-
-    #definiamo una variabile per gestire le due tipologie di pattern
-    model_classes = np.array([label0,label1])
 
     for i, (train_index, test_index) in enumerate(indices):
 
@@ -94,33 +92,29 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
 
         # Internal test
         test_prediction = model.predict(test_pattern)
-
-        temp_Npos = 0
-        temp_Nneg = 0
-
-        for t_lab in test_labels:
-            if t_lab == label1:
-                temp_Npos += 1
-            if t_lab == label0:
-                temp_Nneg += 1
-
-        temp_accuracy = 0.
-        temp_sensitivity = 0.
-        temp_specificity = 0.
+        temp_confMat = np.zeros((2,2))
 
         for j, pred in enumerate(test_prediction):
-            if pred == label1 and test_labels[j] == label1:
-                temp_accuracy += 1./(temp_Npos+temp_Nneg)
-                temp_sensitivity += 1./temp_Npos
-    
-            if pred == label0 and test_labels[j] == label0:
-                temp_accuracy += 1./(temp_Npos+temp_Nneg)
-                temp_specificity += 1./temp_Nneg
-        
+            if pred == label1:
+                if test_labels[j] == label1:
+                    temp_confMat[0][0] += 1
+                elif test_labels[j] == label0:
+                    temp_confMat[0][1] += 1
+            elif pred == label0:
+                if test_labels[j] == label1:
+                    temp_confMat[1][0] += 1
+                elif test_labels[j] == label0:
+                    temp_confMat[1][1] += 1
+
+        temp_accuracy = (temp_confMat[0][0] + temp_confMat[1][1])/(temp_confMat[0][0] + temp_confMat[1][0] + temp_confMat[1][1] + temp_confMat[0][1])
+        temp_sensitivity = (temp_confMat[0][0]) / (temp_confMat[0][0] + temp_confMat[1][0])
+        temp_specificity = (temp_confMat[1][1]) / (temp_confMat[1][1] + temp_confMat[0][1])
+        temp_precision = (temp_confMat[0][0]) / (temp_confMat[0][0] + temp_confMat[0][1])
 
         fold_accuracy.append(temp_accuracy)
         fold_sensitivity.append(temp_sensitivity)
         fold_specificity.append(temp_specificity)
+        fold_precision.append(temp_precision)
 
         # External test: Majority vote counting
         if np.any(ext_lab != None):
@@ -135,81 +129,120 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
     # Performance of External Test: Best in Training
     # Best Accuracy
     bacc_model = models[np.argmax(fold_accuracy)]
-    bacc_accuracy = 0.
-    bacc_sensitivity = 0.
-    bacc_specificity = 0.
+    bacc_confMat = np.zeros((2,2))
 
     if np.any(ext_lab != None):
         bacc_predict = bacc_model.predict(ext_patt)
 
         for j, pred in enumerate(bacc_predict):
-            if pred == label1 and ext_lab[j] == label1:
-                bacc_accuracy += 1./(N1_ext+N0_ext)
-                bacc_sensitivity += 1./N1_ext
+            if pred == label1:
+                if ext_lab[j] == label1:
+                    bacc_confMat[0][0] += 1
+                elif ext_lab[j] == label0:
+                    bacc_confMat[0][1] += 1
+            elif pred == label0:
+                if ext_lab[j] == label1:
+                    bacc_confMat[1][0] += 1
+                elif ext_lab[j] == label0:
+                    bacc_confMat[1][1] += 1
         
-            if pred == label0 and ext_lab[j] == label0:
-                bacc_accuracy += 1./(N1_ext+N0_ext)
-                bacc_specificity += 1./N0_ext
+        bacc_accuracy = (bacc_confMat[0][0] + bacc_confMat[1][1])/(bacc_confMat[0][0] + bacc_confMat[1][0] + bacc_confMat[1][1] + bacc_confMat[0][1])
+        bacc_sensitivity = (bacc_confMat[0][0]) / (bacc_confMat[0][0] + bacc_confMat[1][0])
+        bacc_specificity = (bacc_confMat[1][1]) / (bacc_confMat[1][1] + bacc_confMat[0][1])
+        bacc_precision = (bacc_confMat[0][0]) / (bacc_confMat[0][0] + bacc_confMat[0][1])
 
     # Best Sensitivity
     bsens_model = models[np.argmax(fold_sensitivity)]
-    bsens_accuracy = 0.
-    bsens_sensitivity = 0.
-    bsens_specificity = 0.
+    bsens_confMat = np.zeros((2,2))
 
     if np.any(ext_lab != None):
         bsens_predict = bsens_model.predict(ext_patt)
 
         for j, pred in enumerate(bsens_predict):
-            if pred == label1 and ext_lab[j] == label1:
-                bsens_accuracy += 1./(N1_ext+N0_ext)
-                bsens_sensitivity += 1./N1_ext
+            if pred == label1:
+                if ext_lab[j] == label1:
+                    bsens_confMat[0][0] += 1
+                elif ext_lab[j] == label0:
+                    bsens_confMat[0][1] += 1
+            elif pred == label0:
+                if ext_lab[j] == label1:
+                    bsens_confMat[1][0] += 1
+                elif ext_lab[j] == label0:
+                    bsens_confMat[1][1] += 1
         
-            if pred == label0 and ext_lab[j] == label0:
-                bsens_accuracy += 1./(N1_ext+N0_ext)
-                bsens_specificity += 1./N0_ext
+        bsens_accuracy = (bsens_confMat[0][0] + bsens_confMat[1][1])/(bsens_confMat[0][0] + bsens_confMat[1][0] + bsens_confMat[1][1] + bsens_confMat[0][1])
+        bsens_sensitivity = (bsens_confMat[0][0]) / (bsens_confMat[0][0] + bsens_confMat[1][0])
+        bsens_specificity = (bsens_confMat[1][1]) / (bsens_confMat[1][1] + bsens_confMat[0][1])
+        bsens_precision = (bsens_confMat[0][0]) / (bsens_confMat[0][0] + bsens_confMat[0][1])
 
     # Best Specificity
     bspec_model = models[np.argmax(fold_specificity)]
-    bspec_accuracy = 0.
-    bspec_sensitivity = 0.
-    bspec_specificity = 0.
-    
+    bspec_confMat = np.zeros((2,2))
+
     if np.any(ext_lab != None):
         bspec_predict = bspec_model.predict(ext_patt)
 
         for j, pred in enumerate(bspec_predict):
-            if pred == label1 and ext_lab[j] == label1:
-                bspec_accuracy += 1./(N1_ext+N0_ext)
-                bspec_sensitivity += 1./N1_ext
-
+            if pred == label1:
+                if ext_lab[j] == label1:
+                    bspec_confMat[0][0] += 1
+                elif ext_lab[j] == label0:
+                    bspec_confMat[0][1] += 1
+            elif pred == label0:
+                if ext_lab[j] == label1:
+                    bspec_confMat[1][0] += 1
+                elif ext_lab[j] == label0:
+                    bspec_confMat[1][1] += 1
         
-            if pred == label0 and ext_lab[j] == label0:
-                bspec_accuracy += 1./(N1_ext+N0_ext)
-                bspec_specificity += 1./N0_ext
+        bspec_accuracy = (bspec_confMat[0][0] + bspec_confMat[1][1])/(bspec_confMat[0][0] + bspec_confMat[1][0] + bspec_confMat[1][1] + bspec_confMat[0][1])
+        bspec_sensitivity = (bspec_confMat[0][0]) / (bspec_confMat[0][0] + bspec_confMat[1][0])
+        bspec_specificity = (bspec_confMat[1][1]) / (bspec_confMat[1][1] + bspec_confMat[0][1])
+        bspec_precision = (bspec_confMat[0][0]) / (bspec_confMat[0][0] + bspec_confMat[0][1])
+
+    # Best Precision
+    bprec_model = models[np.argmax(fold_precision)]
+    bprec_confMat = np.zeros((2,2))
+
+    if np.any(ext_lab != None):
+        bprec_predict = bprec_model.predict(ext_patt)
+
+        for j, pred in enumerate(bprec_predict):
+            if pred == label1:
+                if ext_lab[j] == label1:
+                    bprec_confMat[0][0] += 1
+                elif ext_lab[j] == label0:
+                    bprec_confMat[0][1] += 1
+            elif pred == label0:
+                if ext_lab[j] == label1:
+                    bprec_confMat[1][0] += 1
+                elif ext_lab[j] == label0:
+                    bprec_confMat[1][1] += 1
+        
+        bprec_accuracy = (bprec_confMat[0][0] + bprec_confMat[1][1])/(bprec_confMat[0][0] + bprec_confMat[1][0] + bprec_confMat[1][1] + bprec_confMat[0][1])
+        bprec_sensitivity = (bprec_confMat[0][0]) / (bprec_confMat[0][0] + bprec_confMat[1][0])
+        bprec_specificity = (bprec_confMat[1][1]) / (bprec_confMat[1][1] + bprec_confMat[0][1])
+        bprec_precision = (bprec_confMat[0][0]) / (bprec_confMat[0][0] + bprec_confMat[0][1])
 
     # External test: Majority vote
-    ext_accuracy = 0.
-    ext_sensitivity = 0.
-    ext_specificity = 0.
-    conf_mat = np.zeros((2,2))
+    ext_confMat = np.zeros((2,2))
 
     if np.any(ext_lab != None):
         for i, true_label in enumerate(ext_lab):
             if vote_0_ext[i]>=vote_1_ext[i]:
                 if true_label == label1:
-                    conf_mat[1][0] += 1
+                    ext_confMat[1][0] += 1
                 if true_label == label0:
-                    ext_accuracy += 1./(N1_ext+N0_ext)
-                    ext_specificity += 1./N0_ext
-                    conf_mat[1][1] += 1
+                    ext_confMat[1][1] += 1
             if vote_0_ext[i]<vote_1_ext[i]:
                 if true_label == label1:
-                    ext_accuracy += 1./(N1_ext+N0_ext)
-                    ext_sensitivity += 1./N1_ext
-                    conf_mat[0][0] += 1
+                    ext_confMat[0][0] += 1
                 if true_label == label0:
-                    conf_mat[0][1] += 1
+                    ext_confMat[0][1] += 1
+    
+    ext_accuracy = (ext_confMat[0][0] + ext_confMat[1][1])/(ext_confMat[0][0] + ext_confMat[1][0] + ext_confMat[1][1] + ext_confMat[0][1])
+    ext_sensitivity = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[1][0])
+    ext_specificity = (ext_confMat[1][1]) / (ext_confMat[1][1] + ext_confMat[0][1])
+    ext_precision = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[0][1])
 
     cpu_time_stamp = clock.process_time() - start
 
@@ -223,21 +256,31 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
         'Sens Err': np.std(fold_sensitivity),    #/np.sqrt(k),
         'Spec': np.mean(fold_specificity),
         'Spec Err': np.std(fold_specificity),    #/np.sqrt(k),
+        'Prec': np.mean(fold_precision),
+        'Prec Err': np.std(fold_precision),
         'Loss': np.mean(fold_loss),
         'Ext Acc': ext_accuracy,
         'Ext Sens': ext_sensitivity,
         'Ext Spec': ext_specificity,
+        'Ext Prec': ext_precision,
         'BAcc Acc': bacc_accuracy,
         'BAcc Sens': bacc_sensitivity,
         'BAcc Spec': bacc_specificity,
+        'BAcc Prec': bacc_precision,
         'BSens Acc': bsens_accuracy,
         'BSens Sens': bsens_sensitivity,
         'BSens Spec': bsens_specificity,
+        'BSens Prec': bsens_precision,
         'BSpec Acc': bspec_accuracy,
         'BSpec Sens': bspec_sensitivity,
         'BSpec Spec': bspec_specificity,
+        'BSpec, Prec': bspec_precision,
+        'BPrec Acc': bprec_accuracy,
+        'BPrec Sens': bprec_sensitivity,
+        'BPrec Spec': bprec_specificity,
+        'BPrec, Prec': bprec_precision,
         'Models': models,
-        'Conf Mat': conf_mat,
+        'Conf Mat': ext_confMat,
         'Time': cpu_time_stamp
     }
 
@@ -251,6 +294,7 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
     fold_accuracy = []
     fold_sensitivity = []
     fold_specificity = []
+    fold_precision = []
     fold_loss = []
 
     kf = StratifiedKFold(n_splits = k, shuffle = True)
@@ -267,9 +311,6 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
                 N0_ext +=1
             if lab == label1:
                 N1_ext +=1
-
-    #definiamo una variabile per gestire le due tipologie di pattern
-    model_classes = np.array([label0,label1])
 
     for i, (train_index, test_index) in enumerate(indices):
 
@@ -289,33 +330,29 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
 
         # Internal test
         test_prediction = model.predict(test_pattern)
-
-        temp_Npos = 0
-        temp_Nneg = 0
-
-        for t_lab in test_labels:
-            if t_lab == label1:
-                temp_Npos += 1
-            if t_lab == label0:
-                temp_Nneg += 1
-
-        temp_accuracy = 0.
-        temp_sensitivity = 0.
-        temp_specificity = 0.
+        temp_confMat = np.zeros((2,2))
 
         for j, pred in enumerate(test_prediction):
-            if pred == label1 and test_labels[j] == label1:
-                temp_accuracy += 1./(temp_Npos+temp_Nneg)
-                temp_sensitivity += 1./temp_Npos
-    
-            if pred == label0 and test_labels[j] == label0:
-                temp_accuracy += 1./(temp_Npos+temp_Nneg)
-                temp_specificity += 1./temp_Nneg
-        
+            if pred == label1:
+                if test_labels[j] == label1:
+                    temp_confMat[0][0] += 1
+                elif test_labels[j] == label0:
+                    temp_confMat[0][1] += 1
+            elif pred == label0:
+                if test_labels[j] == label1:
+                    temp_confMat[1][0] += 1
+                elif test_labels[j] == label0:
+                    temp_confMat[1][1] += 1
+
+        temp_accuracy = (temp_confMat[0][0] + temp_confMat[1][1])/(temp_confMat[0][0] + temp_confMat[1][0] + temp_confMat[1][1] + temp_confMat[0][1])
+        temp_sensitivity = (temp_confMat[0][0]) / (temp_confMat[0][0] + temp_confMat[1][0])
+        temp_specificity = (temp_confMat[1][1]) / (temp_confMat[1][1] + temp_confMat[0][1])
+        temp_precision = (temp_confMat[0][0]) / (temp_confMat[0][0] + temp_confMat[0][1])
 
         fold_accuracy.append(temp_accuracy)
         fold_sensitivity.append(temp_sensitivity)
         fold_specificity.append(temp_specificity)
+        fold_precision.append(temp_precision)
 
         # External test: Majority vote counting
         if np.any(ext_lab != None):
@@ -330,81 +367,120 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
     # Performance of External Test: Best in Training
     # Best Accuracy
     bacc_model = models[np.argmax(fold_accuracy)]
-    bacc_accuracy = 0.
-    bacc_sensitivity = 0.
-    bacc_specificity = 0.
+    bacc_confMat = np.zeros((2,2))
 
     if np.any(ext_lab != None):
         bacc_predict = bacc_model.predict(ext_patt)
 
         for j, pred in enumerate(bacc_predict):
-            if pred == label1 and ext_lab[j] == label1:
-                bacc_accuracy += 1./(N1_ext+N0_ext)
-                bacc_sensitivity += 1./N1_ext
+            if pred == label1:
+                if ext_lab[j] == label1:
+                    bacc_confMat[0][0] += 1
+                elif ext_lab[j] == label0:
+                    bacc_confMat[0][1] += 1
+            elif pred == label0:
+                if ext_lab[j] == label1:
+                    bacc_confMat[1][0] += 1
+                elif ext_lab[j] == label0:
+                    bacc_confMat[1][1] += 1
         
-            if pred == label0 and ext_lab[j] == label0:
-                bacc_accuracy += 1./(N1_ext+N0_ext)
-                bacc_specificity += 1./N0_ext
+        bacc_accuracy = (bacc_confMat[0][0] + bacc_confMat[1][1])/(bacc_confMat[0][0] + bacc_confMat[1][0] + bacc_confMat[1][1] + bacc_confMat[0][1])
+        bacc_sensitivity = (bacc_confMat[0][0]) / (bacc_confMat[0][0] + bacc_confMat[1][0])
+        bacc_specificity = (bacc_confMat[1][1]) / (bacc_confMat[1][1] + bacc_confMat[0][1])
+        bacc_precision = (bacc_confMat[0][0]) / (bacc_confMat[0][0] + bacc_confMat[0][1])
 
     # Best Sensitivity
     bsens_model = models[np.argmax(fold_sensitivity)]
-    bsens_accuracy = 0.
-    bsens_sensitivity = 0.
-    bsens_specificity = 0.
+    bsens_confMat = np.zeros((2,2))
 
     if np.any(ext_lab != None):
         bsens_predict = bsens_model.predict(ext_patt)
 
         for j, pred in enumerate(bsens_predict):
-            if pred == label1 and ext_lab[j] == label1:
-                bsens_accuracy += 1./(N1_ext+N0_ext)
-                bsens_sensitivity += 1./N1_ext
+            if pred == label1:
+                if ext_lab[j] == label1:
+                    bsens_confMat[0][0] += 1
+                elif ext_lab[j] == label0:
+                    bsens_confMat[0][1] += 1
+            elif pred == label0:
+                if ext_lab[j] == label1:
+                    bsens_confMat[1][0] += 1
+                elif ext_lab[j] == label0:
+                    bsens_confMat[1][1] += 1
         
-            if pred == label0 and ext_lab[j] == label0:
-                bsens_accuracy += 1./(N1_ext+N0_ext)
-                bsens_specificity += 1./N0_ext
+        bsens_accuracy = (bsens_confMat[0][0] + bsens_confMat[1][1])/(bsens_confMat[0][0] + bsens_confMat[1][0] + bsens_confMat[1][1] + bsens_confMat[0][1])
+        bsens_sensitivity = (bsens_confMat[0][0]) / (bsens_confMat[0][0] + bsens_confMat[1][0])
+        bsens_specificity = (bsens_confMat[1][1]) / (bsens_confMat[1][1] + bsens_confMat[0][1])
+        bsens_precision = (bsens_confMat[0][0]) / (bsens_confMat[0][0] + bsens_confMat[0][1])
 
     # Best Specificity
     bspec_model = models[np.argmax(fold_specificity)]
-    bspec_accuracy = 0.
-    bspec_sensitivity = 0.
-    bspec_specificity = 0.
-    
+    bspec_confMat = np.zeros((2,2))
+
     if np.any(ext_lab != None):
         bspec_predict = bspec_model.predict(ext_patt)
 
         for j, pred in enumerate(bspec_predict):
-            if pred == label1 and ext_lab[j] == label1:
-                bspec_accuracy += 1./(N1_ext+N0_ext)
-                bspec_sensitivity += 1./N1_ext
-
+            if pred == label1:
+                if ext_lab[j] == label1:
+                    bspec_confMat[0][0] += 1
+                elif ext_lab[j] == label0:
+                    bspec_confMat[0][1] += 1
+            elif pred == label0:
+                if ext_lab[j] == label1:
+                    bspec_confMat[1][0] += 1
+                elif ext_lab[j] == label0:
+                    bspec_confMat[1][1] += 1
         
-            if pred == label0 and ext_lab[j] == label0:
-                bspec_accuracy += 1./(N1_ext+N0_ext)
-                bspec_specificity += 1./N0_ext
+        bspec_accuracy = (bspec_confMat[0][0] + bspec_confMat[1][1])/(bspec_confMat[0][0] + bspec_confMat[1][0] + bspec_confMat[1][1] + bspec_confMat[0][1])
+        bspec_sensitivity = (bspec_confMat[0][0]) / (bspec_confMat[0][0] + bspec_confMat[1][0])
+        bspec_specificity = (bspec_confMat[1][1]) / (bspec_confMat[1][1] + bspec_confMat[0][1])
+        bspec_precision = (bspec_confMat[0][0]) / (bspec_confMat[0][0] + bspec_confMat[0][1])
+
+    # Best Precision
+    bprec_model = models[np.argmax(fold_precision)]
+    bprec_confMat = np.zeros((2,2))
+
+    if np.any(ext_lab != None):
+        bprec_predict = bprec_model.predict(ext_patt)
+
+        for j, pred in enumerate(bprec_predict):
+            if pred == label1:
+                if ext_lab[j] == label1:
+                    bprec_confMat[0][0] += 1
+                elif ext_lab[j] == label0:
+                    bprec_confMat[0][1] += 1
+            elif pred == label0:
+                if ext_lab[j] == label1:
+                    bprec_confMat[1][0] += 1
+                elif ext_lab[j] == label0:
+                    bprec_confMat[1][1] += 1
+        
+        bprec_accuracy = (bprec_confMat[0][0] + bprec_confMat[1][1])/(bprec_confMat[0][0] + bprec_confMat[1][0] + bprec_confMat[1][1] + bprec_confMat[0][1])
+        bprec_sensitivity = (bprec_confMat[0][0]) / (bprec_confMat[0][0] + bprec_confMat[1][0])
+        bprec_specificity = (bprec_confMat[1][1]) / (bprec_confMat[1][1] + bprec_confMat[0][1])
+        bprec_precision = (bprec_confMat[0][0]) / (bprec_confMat[0][0] + bprec_confMat[0][1])
 
     # External test: Majority vote
-    ext_accuracy = 0.
-    ext_sensitivity = 0.
-    ext_specificity = 0.
-    conf_mat = np.zeros((2,2))
+    ext_confMat = np.zeros((2,2))
 
     if np.any(ext_lab != None):
         for i, true_label in enumerate(ext_lab):
             if vote_0_ext[i]>=vote_1_ext[i]:
                 if true_label == label1:
-                    conf_mat[1][0] += 1
+                    ext_confMat[1][0] += 1
                 if true_label == label0:
-                    ext_accuracy += 1./(N1_ext+N0_ext)
-                    ext_specificity += 1./N0_ext
-                    conf_mat[1][1] += 1
+                    ext_confMat[1][1] += 1
             if vote_0_ext[i]<vote_1_ext[i]:
                 if true_label == label1:
-                    ext_accuracy += 1./(N1_ext+N0_ext)
-                    ext_sensitivity += 1./N1_ext
-                    conf_mat[0][0] += 1
+                    ext_confMat[0][0] += 1
                 if true_label == label0:
-                    conf_mat[0][1] += 1
+                    ext_confMat[0][1] += 1
+    
+    ext_accuracy = (ext_confMat[0][0] + ext_confMat[1][1])/(ext_confMat[0][0] + ext_confMat[1][0] + ext_confMat[1][1] + ext_confMat[0][1])
+    ext_sensitivity = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[1][0])
+    ext_specificity = (ext_confMat[1][1]) / (ext_confMat[1][1] + ext_confMat[0][1])
+    ext_precision = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[0][1])
 
     cpu_time_stamp = clock.process_time() - start
 
@@ -418,21 +494,31 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
         'Sens Err': np.std(fold_sensitivity),    #/np.sqrt(k),
         'Spec': np.mean(fold_specificity),
         'Spec Err': np.std(fold_specificity),    #/np.sqrt(k),
+        'Prec': np.mean(fold_precision),
+        'Prec Err': np.std(fold_precision),
         'Loss': np.mean(fold_loss),
         'Ext Acc': ext_accuracy,
         'Ext Sens': ext_sensitivity,
         'Ext Spec': ext_specificity,
+        'Ext Prec': ext_precision,
         'BAcc Acc': bacc_accuracy,
         'BAcc Sens': bacc_sensitivity,
         'BAcc Spec': bacc_specificity,
+        'BAcc Prec': bacc_precision,
         'BSens Acc': bsens_accuracy,
         'BSens Sens': bsens_sensitivity,
         'BSens Spec': bsens_specificity,
+        'BSens Prec': bsens_precision,
         'BSpec Acc': bspec_accuracy,
         'BSpec Sens': bspec_sensitivity,
         'BSpec Spec': bspec_specificity,
+        'BSpec, Prec': bspec_precision,
+        'BPrec Acc': bprec_accuracy,
+        'BPrec Sens': bprec_sensitivity,
+        'BPrec Spec': bprec_specificity,
+        'BPrec, Prec': bprec_precision,
         'Models': models,
-        'Conf Mat': conf_mat,
+        'Conf Mat': ext_confMat,
         'Time': cpu_time_stamp
     }
 
@@ -451,6 +537,7 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
     accuracy_list = np.empty((len_ep, len_k, len_lr))
     sensitivity_list = np.empty((len_ep, len_k, len_lr))
     specificity_list = np.empty((len_ep, len_k, len_lr))
+    precision_list = np.empty((len_ep, len_k, len_lr))
     loss_list = np.empty((len_ep, len_k, len_lr))
 
     print("Begin Scanning...")
@@ -479,6 +566,7 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
                 accuracy_list[i_ep, i_k, i_lr] = res['Acc']
                 sensitivity_list[i_ep, i_k, i_lr] = res['Sens']
                 specificity_list[i_ep, i_k, i_lr] = res['Spec']
+                precision_list[i_ep, i_k, i_lr] = res['Prec']
                 loss_list[i_ep, i_k, i_lr] = res['Loss']
 
     print("\nFinished Scanning!                                                \n")
@@ -487,6 +575,7 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
         'Acc List': accuracy_list,
         'Sens List': sensitivity_list,
         'Spec List': specificity_list,
+        'Prec List': precision_list,
         'Loss List': loss_list,
     }
 
@@ -668,24 +757,24 @@ def NN_kfold_par(k, par, patterns, labels, label0, label1, iter = 0, ext_patt = 
     ext_accuracy = 0.
     ext_sensitivity = 0.
     ext_specificity = 0.
-    conf_mat = np.zeros((2,2))
+    ext_confMat = np.zeros((2,2))
 
     if np.any(ext_lab != None):
         for i, true_label in enumerate(ext_lab):
             if vote_0_ext[i]>=vote_1_ext[i]:
                 if true_label == label1:
-                    conf_mat[1][0] += 1
+                    ext_confMat[1][0] += 1
                 if true_label == label0:
                     ext_accuracy += 1./(N1_ext+N0_ext)
                     ext_specificity += 1./N0_ext
-                    conf_mat[1][1] += 1
+                    ext_confMat[1][1] += 1
             if vote_0_ext[i]<vote_1_ext[i]:
                 if true_label == label1:
                     ext_accuracy += 1./(N1_ext+N0_ext)
                     ext_sensitivity += 1./N1_ext
-                    conf_mat[0][0] += 1
+                    ext_confMat[0][0] += 1
                 if true_label == label0:
-                    conf_mat[0][1] += 1
+                    ext_confMat[0][1] += 1
 
     cpu_time_stamp = clock.process_time() - start
 
@@ -725,7 +814,7 @@ def NN_kfold_par(k, par, patterns, labels, label0, label1, iter = 0, ext_patt = 
         'BSpec Sens': bspec_sensitivity,
         'BSpec Spec': bspec_specificity,
         'Models': models,
-        'Conf Mat': conf_mat,
+        'Conf Mat': ext_confMat,
         'Time': cpu_time_stamp
     }
 

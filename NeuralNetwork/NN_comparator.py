@@ -22,17 +22,17 @@ if __name__ == '__main__':
 	mother_directory = os.path.dirname(script_directory)
 	dataset_path = os.path.join(mother_directory, 'Dataset')
 
-	n_iter = 10000
+	n_iter = 10
 
 	# Iperparameters non-PCA
 	k = 5
-	lr = 1e-4
-	epoch = 60
+	lr = 1e-2
+	epoch = 4000
 
 	# Iperparameters PCA
 	k_PCA = 5
-	lr_PCA = 1e-4
-	epoch_PCA = 60
+	lr_PCA = 1e-2
+	epoch_PCA = 4000
 
 	# Training Set
 	train_patterns = pd.read_csv(dataset_path+"/iono_trainPatt.csv", header=0, index_col=0)
@@ -78,7 +78,8 @@ if __name__ == '__main__':
 	cpu_time_non_pca = []
 
 	for n in range(n_iter):
-		res = NN.NN_binary_kfold(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
+		# res = NN.NN_binary_kfold(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
+		res = NN.NN_binary_kfold_neuron(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
 
 		acc_list.append(res['Acc'])
 		sens_list.append(res['Sens'])
@@ -223,7 +224,8 @@ if __name__ == '__main__':
 	cpu_time_pca = []
 
 	for n in range(n_iter):
-		res = NN.NN_binary_kfold(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
+		# res = NN.NN_binary_kfold(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
+		res = NN.NN_binary_kfold_neuron(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
 
 		acc_list.append(res['Acc'])
 		sens_list.append(res['Sens'])
