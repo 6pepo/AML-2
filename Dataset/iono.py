@@ -1,9 +1,16 @@
+import sys
+import os
+
+project_root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root_dir not in sys.path:
+    sys.path.insert(0, project_root_dir)
+
 from ucimlrepo import fetch_ucirepo 
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import RF_Library as RF
 import time as clock
+import RandomForest.RF_Library as RF
 import torch
   
 start_cpu = clock.process_time()
