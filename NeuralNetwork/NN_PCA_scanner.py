@@ -41,7 +41,8 @@ if __name__ == '__main__':
     print('Good signals:', good)
     print('Bad signals:', bad)
     
-    epoch_range = range(1, 101, 1)
+    epoch_step = 1
+    epoch_range = range(1, 101, epoch_step)
     k_range = range(2, 11, 1)
     lr_range = np.arange(1e-4, 1e-3, 1e-4)
 
@@ -106,7 +107,7 @@ if __name__ == '__main__':
     axSlide_k1 = fig1.add_axes([0.05, 0.05, 0.05, 0.4])
     kSlide1 = Slider(ax = axSlide_k1, label = "Number of folds", valmin=k_range[0], valmax=k_range[-1], valstep = 1, valinit=k_range[0], orientation='vertical')
     axSlide_ep = fig1.add_axes([0.05, 0.55, 0.05, 0.4])
-    epSlide = Slider(ax = axSlide_ep, label = "Number of epochs", valmin=epoch_range[0], valmax=epoch_range[-1], valstep = 1, valinit=epoch_range[0], orientation='vertical')
+    epSlide = Slider(ax = axSlide_ep, label = "Number of epochs", valmin=epoch_range[0], valmax=epoch_range[-1], valstep = epoch_step, valinit=epoch_range[0], orientation='vertical')
 
 def update_metrics_1(val):
     i_k = k_range.index(kSlide1.val)
@@ -205,7 +206,7 @@ kSlide3 = Slider(ax = axSlide_k3, label = "Number of folds", valmin=k_range[0], 
 axSlide_lr3 = fig3.add_axes([0.04, 0.05, 0.05, 0.4])
 lrSlide3 = Slider(ax = axSlide_lr3, label = "Learning Rate", valmin=0, valmax=len(lr_range)-1, valstep = 1, valinit=0, orientation='vertical')
 axSlide_ep3 = fig3.add_axes([0.04, 0.55, 0.05, 0.4])
-epSlide3 = Slider(ax = axSlide_ep3, label = "Number of epochs", valmin=epoch_range[0], valmax=epoch_range[-1], valstep = 1, valinit=epoch_range[0], orientation='vertical')
+epSlide3 = Slider(ax = axSlide_ep3, label = "Number of epochs", valmin=epoch_range[0], valmax=epoch_range[-1], valstep = epoch_step, valinit=epoch_range[0], orientation='vertical')
 
 def update_loss(val):
     i_k = k_range.index(kSlide3.val)

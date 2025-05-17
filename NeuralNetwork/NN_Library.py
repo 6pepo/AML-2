@@ -109,7 +109,7 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
         temp_accuracy = (temp_confMat[0][0] + temp_confMat[1][1])/(temp_confMat[0][0] + temp_confMat[1][0] + temp_confMat[1][1] + temp_confMat[0][1])
         temp_sensitivity = (temp_confMat[0][0]) / (temp_confMat[0][0] + temp_confMat[1][0])
         temp_specificity = (temp_confMat[1][1]) / (temp_confMat[1][1] + temp_confMat[0][1])
-        temp_precision = (temp_confMat[0][0]) / (temp_confMat[0][0] + temp_confMat[0][1])
+        temp_precision = (temp_confMat[0][0]) / (temp_confMat[0][0] + temp_confMat[0][1]) if ((temp_confMat[0][0] + temp_confMat[0][1])) != 0 else 0
 
         fold_accuracy.append(temp_accuracy)
         fold_sensitivity.append(temp_sensitivity)
@@ -130,6 +130,10 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
     # Best Accuracy
     bacc_model = models[np.argmax(fold_accuracy)]
     bacc_confMat = np.zeros((2,2))
+    bacc_accuracy = 0.
+    bacc_sensitivity = 0.
+    bacc_specificity = 0.
+    bacc_precision = 0.
 
     if np.any(ext_lab != None):
         bacc_predict = bacc_model.predict(ext_patt)
@@ -154,6 +158,10 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
     # Best Sensitivity
     bsens_model = models[np.argmax(fold_sensitivity)]
     bsens_confMat = np.zeros((2,2))
+    bsens_accuracy = 0.
+    bsens_sensitivity = 0.
+    bsens_specificity = 0.
+    bsens_precision = 0.
 
     if np.any(ext_lab != None):
         bsens_predict = bsens_model.predict(ext_patt)
@@ -178,6 +186,10 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
     # Best Specificity
     bspec_model = models[np.argmax(fold_specificity)]
     bspec_confMat = np.zeros((2,2))
+    bspec_accuracy = 0.
+    bspec_sensitivity = 0.
+    bspec_specificity = 0.
+    bspec_precision = 0.
 
     if np.any(ext_lab != None):
         bspec_predict = bspec_model.predict(ext_patt)
@@ -202,6 +214,10 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
     # Best Precision
     bprec_model = models[np.argmax(fold_precision)]
     bprec_confMat = np.zeros((2,2))
+    bprec_accuracy = 0.
+    bprec_sensitivity = 0.
+    bprec_specificity = 0.
+    bprec_precision = 0.
 
     if np.any(ext_lab != None):
         bprec_predict = bprec_model.predict(ext_patt)
@@ -225,6 +241,10 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
 
     # External test: Majority vote
     ext_confMat = np.zeros((2,2))
+    ext_accuracy = 0.
+    ext_sensitivity = 0.
+    ext_specificity = 0.
+    ext_precision = 0.
 
     if np.any(ext_lab != None):
         for i, true_label in enumerate(ext_lab):
@@ -239,10 +259,10 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
                 if true_label == label0:
                     ext_confMat[0][1] += 1
     
-    ext_accuracy = (ext_confMat[0][0] + ext_confMat[1][1])/(ext_confMat[0][0] + ext_confMat[1][0] + ext_confMat[1][1] + ext_confMat[0][1])
-    ext_sensitivity = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[1][0])
-    ext_specificity = (ext_confMat[1][1]) / (ext_confMat[1][1] + ext_confMat[0][1])
-    ext_precision = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[0][1])
+        ext_accuracy = (ext_confMat[0][0] + ext_confMat[1][1])/(ext_confMat[0][0] + ext_confMat[1][0] + ext_confMat[1][1] + ext_confMat[0][1])
+        ext_sensitivity = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[1][0])
+        ext_specificity = (ext_confMat[1][1]) / (ext_confMat[1][1] + ext_confMat[0][1])
+        ext_precision = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[0][1])
 
     cpu_time_stamp = clock.process_time() - start
 
@@ -347,7 +367,7 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
         temp_accuracy = (temp_confMat[0][0] + temp_confMat[1][1])/(temp_confMat[0][0] + temp_confMat[1][0] + temp_confMat[1][1] + temp_confMat[0][1])
         temp_sensitivity = (temp_confMat[0][0]) / (temp_confMat[0][0] + temp_confMat[1][0])
         temp_specificity = (temp_confMat[1][1]) / (temp_confMat[1][1] + temp_confMat[0][1])
-        temp_precision = (temp_confMat[0][0]) / (temp_confMat[0][0] + temp_confMat[0][1])
+        temp_precision = (temp_confMat[0][0]) / (temp_confMat[0][0] + temp_confMat[0][1]) if ((temp_confMat[0][0] + temp_confMat[0][1])) != 0 else 0
 
         fold_accuracy.append(temp_accuracy)
         fold_sensitivity.append(temp_sensitivity)
@@ -368,6 +388,10 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
     # Best Accuracy
     bacc_model = models[np.argmax(fold_accuracy)]
     bacc_confMat = np.zeros((2,2))
+    bacc_accuracy = 0.
+    bacc_sensitivity = 0.
+    bacc_specificity = 0.
+    bacc_precision = 0.
 
     if np.any(ext_lab != None):
         bacc_predict = bacc_model.predict(ext_patt)
@@ -392,6 +416,10 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
     # Best Sensitivity
     bsens_model = models[np.argmax(fold_sensitivity)]
     bsens_confMat = np.zeros((2,2))
+    bsens_accuracy = 0.
+    bsens_sensitivity = 0.
+    bsens_specificity = 0.
+    bsens_precision = 0.
 
     if np.any(ext_lab != None):
         bsens_predict = bsens_model.predict(ext_patt)
@@ -416,6 +444,10 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
     # Best Specificity
     bspec_model = models[np.argmax(fold_specificity)]
     bspec_confMat = np.zeros((2,2))
+    bspec_accuracy = 0.
+    bspec_sensitivity = 0.
+    bspec_specificity = 0.
+    bspec_precision = 0.
 
     if np.any(ext_lab != None):
         bspec_predict = bspec_model.predict(ext_patt)
@@ -440,6 +472,10 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
     # Best Precision
     bprec_model = models[np.argmax(fold_precision)]
     bprec_confMat = np.zeros((2,2))
+    bprec_accuracy = 0.
+    bprec_sensitivity = 0.
+    bprec_specificity = 0.
+    bprec_precision = 0.
 
     if np.any(ext_lab != None):
         bprec_predict = bprec_model.predict(ext_patt)
@@ -463,6 +499,10 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
 
     # External test: Majority vote
     ext_confMat = np.zeros((2,2))
+    ext_accuracy = 0.
+    ext_sensitivity = 0.
+    ext_specificity = 0.
+    ext_precision = 0.
 
     if np.any(ext_lab != None):
         for i, true_label in enumerate(ext_lab):
@@ -477,10 +517,10 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
                 if true_label == label0:
                     ext_confMat[0][1] += 1
     
-    ext_accuracy = (ext_confMat[0][0] + ext_confMat[1][1])/(ext_confMat[0][0] + ext_confMat[1][0] + ext_confMat[1][1] + ext_confMat[0][1])
-    ext_sensitivity = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[1][0])
-    ext_specificity = (ext_confMat[1][1]) / (ext_confMat[1][1] + ext_confMat[0][1])
-    ext_precision = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[0][1])
+        ext_accuracy = (ext_confMat[0][0] + ext_confMat[1][1])/(ext_confMat[0][0] + ext_confMat[1][0] + ext_confMat[1][1] + ext_confMat[0][1])
+        ext_sensitivity = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[1][0])
+        ext_specificity = (ext_confMat[1][1]) / (ext_confMat[1][1] + ext_confMat[0][1])
+        ext_precision = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[0][1])
 
     cpu_time_stamp = clock.process_time() - start
 
