@@ -434,7 +434,7 @@ def plot_histo_gaus_stat(dist1, label1, dist2, label2):
     i_max2 = np.argmax(bin_vals2)
     par2 = [bin_vals2[i_max2], bin_centers2[i_max2], np.std(dist2)]
     
-    if len(bin_centers1[mask1]) > 3 and len(bin_centers2[mask2]) > 3:
+    try:
         popt1, pcov1 = curve_fit(gaussian, bin_centers1[mask1], bin_vals1[mask1], par1, maxfev=10000)
         popt2, pcov2 = curve_fit(gaussian, bin_centers2[mask2], bin_vals2[mask2], par2, maxfev=10000)
 
@@ -443,7 +443,11 @@ def plot_histo_gaus_stat(dist1, label1, dist2, label2):
         ax.plot(x, gaussian(x,*popt2), 'b--', label='Gaussian Fit: A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(popt2[0], popt2[1], popt2[2]))
 
         stat_res = ttest_ind(dist1, dist2 ,equal_var=check_var(popt1[2], popt2[2]), alternative=hp_mode(popt1[1], popt2[1]))
-    else:
+    except:
+        x = np.linspace(np.min(np.concatenate((bins1, bins2))), np.max(np.concatenate((bins1,bins2))), 1000)
+        ax.plot(x, gaussian(x,*par1), 'r--', label='A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(par1[0], par1[1], par1[2]))
+        ax.plot(x, gaussian(x,*par2), 'b--', label='A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(par2[0], par2[1], par2[2]))
+
         stat_res = ttest_ind(dist1, dist2 ,equal_var=check_var(np.var(dist1), np.var(dist2)), alternative=hp_mode(np.mean(dist1), np.mean(dist2)))
 
     ax.plot([],[], marker= None, linestyle='None', label='t-stat: {:.2f}, p-value: {:.2f}'.format(stat_res.statistic, stat_res.pvalue))

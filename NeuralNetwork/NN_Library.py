@@ -24,6 +24,11 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
     start = clock.process_time()  
     models = []
 
+    patterns = sigmoid(patterns) #normalize the data with a sigmoid function
+    if np.any(ext_patt != None):
+        ext_patt = sigmoid(ext_patt)
+
+
     # Metrics of single folds
     fold_accuracy = []
     fold_sensitivity = []
@@ -153,7 +158,7 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
         bacc_accuracy = (bacc_confMat[0][0] + bacc_confMat[1][1])/(bacc_confMat[0][0] + bacc_confMat[1][0] + bacc_confMat[1][1] + bacc_confMat[0][1])
         bacc_sensitivity = (bacc_confMat[0][0]) / (bacc_confMat[0][0] + bacc_confMat[1][0])
         bacc_specificity = (bacc_confMat[1][1]) / (bacc_confMat[1][1] + bacc_confMat[0][1])
-        bacc_precision = (bacc_confMat[0][0]) / (bacc_confMat[0][0] + bacc_confMat[0][1])
+        bacc_precision = (bacc_confMat[0][0]) / (bacc_confMat[0][0] + bacc_confMat[0][1]) if (bacc_confMat[0][0] + bacc_confMat[0][1]) != 0 else 0
 
     # Best Sensitivity
     bsens_model = models[np.argmax(fold_sensitivity)]
@@ -181,7 +186,7 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
         bsens_accuracy = (bsens_confMat[0][0] + bsens_confMat[1][1])/(bsens_confMat[0][0] + bsens_confMat[1][0] + bsens_confMat[1][1] + bsens_confMat[0][1])
         bsens_sensitivity = (bsens_confMat[0][0]) / (bsens_confMat[0][0] + bsens_confMat[1][0])
         bsens_specificity = (bsens_confMat[1][1]) / (bsens_confMat[1][1] + bsens_confMat[0][1])
-        bsens_precision = (bsens_confMat[0][0]) / (bsens_confMat[0][0] + bsens_confMat[0][1])
+        bsens_precision = (bsens_confMat[0][0]) / (bsens_confMat[0][0] + bsens_confMat[0][1]) if (bsens_confMat[0][0] + bsens_confMat[0][1]) != 0 else 0
 
     # Best Specificity
     bspec_model = models[np.argmax(fold_specificity)]
@@ -209,7 +214,7 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
         bspec_accuracy = (bspec_confMat[0][0] + bspec_confMat[1][1])/(bspec_confMat[0][0] + bspec_confMat[1][0] + bspec_confMat[1][1] + bspec_confMat[0][1])
         bspec_sensitivity = (bspec_confMat[0][0]) / (bspec_confMat[0][0] + bspec_confMat[1][0])
         bspec_specificity = (bspec_confMat[1][1]) / (bspec_confMat[1][1] + bspec_confMat[0][1])
-        bspec_precision = (bspec_confMat[0][0]) / (bspec_confMat[0][0] + bspec_confMat[0][1])
+        bspec_precision = (bspec_confMat[0][0]) / (bspec_confMat[0][0] + bspec_confMat[0][1]) if (bspec_confMat[0][0] + bspec_confMat[0][1]) != 0 else 0
 
     # Best Precision
     bprec_model = models[np.argmax(fold_precision)]
@@ -237,7 +242,7 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
         bprec_accuracy = (bprec_confMat[0][0] + bprec_confMat[1][1])/(bprec_confMat[0][0] + bprec_confMat[1][0] + bprec_confMat[1][1] + bprec_confMat[0][1])
         bprec_sensitivity = (bprec_confMat[0][0]) / (bprec_confMat[0][0] + bprec_confMat[1][0])
         bprec_specificity = (bprec_confMat[1][1]) / (bprec_confMat[1][1] + bprec_confMat[0][1])
-        bprec_precision = (bprec_confMat[0][0]) / (bprec_confMat[0][0] + bprec_confMat[0][1])
+        bprec_precision = (bprec_confMat[0][0]) / (bprec_confMat[0][0] + bprec_confMat[0][1]) if (bprec_confMat[0][0] + bprec_confMat[0][1]) != 0 else 0
 
     # External test: Majority vote
     ext_confMat = np.zeros((2,2))
@@ -262,7 +267,7 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
         ext_accuracy = (ext_confMat[0][0] + ext_confMat[1][1])/(ext_confMat[0][0] + ext_confMat[1][0] + ext_confMat[1][1] + ext_confMat[0][1])
         ext_sensitivity = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[1][0])
         ext_specificity = (ext_confMat[1][1]) / (ext_confMat[1][1] + ext_confMat[0][1])
-        ext_precision = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[0][1])
+        ext_precision = (ext_confMat[0][0]) / (ext_confMat[0][0] + ext_confMat[0][1]) if (ext_confMat[0][0] + ext_confMat[0][1]) != 0 else 0
 
     cpu_time_stamp = clock.process_time() - start
 
@@ -592,7 +597,7 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
                 iter += 1
                 
                 # Progress bar
-                progress.set_description(f"Epoch: {n_ep} | Fold: {i_k+1}/{len_k} | Learning Rate: {val_lr:0.5f}")
+                progress.set_description(f"Epoch: {n_ep} | Fold: {i_k+1}/{len_k} | Learning Rate: {val_lr:0.3e}")
                 progress.update(1)
                 
                 # print("N_trees: ", n_trees, "\tN_fold: ", k, "\tIteration: ", iter, "/", tot_iter,end='\r')     #Python 3.x
@@ -1094,26 +1099,27 @@ def plot_histo_gaus_stat(dist1, label1, dist2, label2):
     mask1 = np.where(bin_vals1 != 0)
     bin_centers1 = (bins1[:-1] + bins1[1:])/2
     i_max1 = np.argmax(bin_vals1)
-    par1 = [bin_vals1[i_max1], bin_centers1[i_max1], np.std(dist1)]
+    par1 = [bin_vals1[i_max1], np.mean(dist1), np.std(dist1)]
 
     mask2 = np.where(bin_vals2 != 0)
     bin_centers2 = (bins2[:-1] + bins2[1:])/2
     i_max2 = np.argmax(bin_vals2)
-    par2 = [bin_vals2[i_max2], bin_centers2[i_max2], np.std(dist2)]
+    par2 = [bin_vals2[i_max2], np.mean(dist2), np.std(dist2)]
     
-    if len(bin_centers1[mask1]) > 3 and len(bin_centers2[mask2]) > 3:
-        try:
-            popt1, pcov1 = curve_fit(gaussian, bin_centers1[mask1], bin_vals1[mask1], par1, maxfev=10000)
-            popt2, pcov2 = curve_fit(gaussian, bin_centers2[mask2], bin_vals2[mask2], par2, maxfev=10000)
+    try:
+        popt1, pcov1 = curve_fit(gaussian, bin_centers1[mask1], bin_vals1[mask1], par1, maxfev=10000)
+        popt2, pcov2 = curve_fit(gaussian, bin_centers2[mask2], bin_vals2[mask2], par2, maxfev=10000)
 
-            x = np.linspace(np.min(np.concatenate((bins1, bins2))), np.max(np.concatenate((bins1,bins2))), 1000)
-            ax.plot(x, gaussian(x,*popt1), 'r--', label='Gaussian Fit: A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(popt1[0], popt1[1], popt1[2]))
-            ax.plot(x, gaussian(x,*popt2), 'b--', label='Gaussian Fit: A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(popt2[0], popt2[1], popt2[2]))
+        x = np.linspace(np.min(np.concatenate((bins1, bins2))), np.max(np.concatenate((bins1,bins2))), 1000)
+        ax.plot(x, gaussian(x,*popt1), 'r--', label='Gaussian Fit: A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(popt1[0], popt1[1], popt1[2]))
+        ax.plot(x, gaussian(x,*popt2), 'b--', label='Gaussian Fit: A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(popt2[0], popt2[1], popt2[2]))
 
-            stat_res = ttest_ind(dist1, dist2 ,equal_var=check_var(popt1[2], popt2[2]), alternative=hp_mode(popt1[1], popt2[1]))
-        except:
-            stat_res = ttest_ind(dist1, dist2 ,equal_var=check_var(np.var(dist1), np.var(dist2)), alternative=hp_mode(np.mean(dist1), np.mean(dist2)))
-    else:
+        stat_res = ttest_ind(dist1, dist2 ,equal_var=check_var(popt1[2], popt2[2]), alternative=hp_mode(popt1[1], popt2[1]))
+    except:
+        x = np.linspace(np.min(np.concatenate((bins1, bins2))), np.max(np.concatenate((bins1,bins2))), 1000)
+        ax.plot(x, gaussian(x,*par1), 'r--', label='A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(par1[0], par1[1], par1[2]))
+        ax.plot(x, gaussian(x,*par2), 'b--', label='A = {:.2f}, $\mu$ = {:.2f}, $\sigma$ = {:.2f}'.format(par2[0], par2[1], par2[2]))
+
         stat_res = ttest_ind(dist1, dist2 ,equal_var=check_var(np.var(dist1), np.var(dist2)), alternative=hp_mode(np.mean(dist1), np.mean(dist2)))
 
     ax.plot([],[], marker= None, linestyle='None', label='t-stat: {:.2f}, p-value: {:.2f}'.format(stat_res.statistic, stat_res.pvalue))
@@ -1150,13 +1156,14 @@ def heatmap_plotter(ax, x, y, array, text_format, title, x_label, y_label, norm,
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
-    rows,cols = array.shape
-    for row in range(rows):
-        for col in range(cols):
-            if norm(array[row][col]) < 0.5:
-                ax.text(x[col], y[row], text_format.format(array[row,col]), ha='center', va='center', color=cmap(0.99), fontsize='xx-small')
-            else:
-                ax.text(x[col], y[row], text_format.format(array[row,col]), ha='center', va='center', color=cmap(0.), fontsize='xx-small')
+    if text_format != None:
+        rows,cols = array.shape
+        for row in range(rows):
+            for col in range(cols):
+                if norm(array[row][col]) < 0.5:
+                    ax.text(x[col], y[row], text_format.format(array[row,col]), ha='center', va='center', color=cmap(0.99), fontsize='xx-small')
+                else:
+                    ax.text(x[col], y[row], text_format.format(array[row,col]), ha='center', va='center', color=cmap(0.), fontsize='xx-small')
 
     return colormesh
 
