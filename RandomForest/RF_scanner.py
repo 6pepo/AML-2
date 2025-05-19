@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     k_range = range(2, 11, 1)
 
-    n_seeds = 100
+    n_seeds = 1
 
     res = RF.RF_binary_scanner(tree_range, k_range, n_seeds, patterns, labels, label0, label1)
     

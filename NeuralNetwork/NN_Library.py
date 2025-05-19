@@ -19,7 +19,6 @@ from matplotlib.ticker import MaxNLocator
 from tqdm import tqdm
 from io import StringIO
 
-
 def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext_patt = None, ext_lab = None):
     start = clock.process_time()  
     models = []
@@ -622,6 +621,57 @@ def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, 
         'Spec List': specificity_list,
         'Prec List': precision_list,
         'Loss List': loss_list,
+    }
+
+    return res
+
+def NN_binary_scanner_iter(iter, epoch_range, k_range, lr_range, patterns, labels, label0, label1, ext_patt = None, ext_lab = None, from_scratch=False):
+    len_ep = len(epoch_range)
+    len_k = len(k_range)
+    len_lr = len(lr_range)
+
+    accuracy_list = np.empty((len_ep, len_k, len_lr, iter))
+    sensitivity_list = np.empty((len_ep, len_k, len_lr, iter))
+    specificity_list = np.empty((len_ep, len_k, len_lr, iter))
+    precision_list = np.empty((len_ep, len_k, len_lr, iter))
+    loss_list = np.empty((len_ep, len_k, len_lr, iter))
+
+    print("Begin Scanning...")
+
+    tot_iter = len_ep*len_k*len_lr*iter
+    progress = tqdm(total=tot_iter)
+
+    for n in range(iter):
+        for i_lr, val_lr in enumerate(lr_range):
+            for i_ep, n_ep in enumerate(epoch_range):
+                for i_k, k in enumerate(k_range):
+                    
+                    # Progress bar
+                    progress.set_description(f"Iteration: {n}/{iter} | Epoch: {n_ep} | Fold: {i_k+1}/{len_k} | Learning Rate: {val_lr:0.3e}")
+                    progress.update(1)
+                    
+                    # print("N_trees: ", n_trees, "\tN_fold: ", k, "\tIteration: ", iter, "/", tot_iter,end='\r')     #Python 3.x
+                    # print("N_trees: {}\tN_fold: {}\tIteration: {}/{} \r".format(n_trees, k, iter, tot_iter)),       #Python 2.x
+
+                    if from_scratch == True:
+                        res = NN_binary_kfold_neuron(val_lr, k, n_ep, patterns, labels, label0, label1)
+                    if from_scratch == False:
+                        res = NN_binary_kfold(val_lr, k, n_ep, patterns, labels, label0, label1)
+
+                    accuracy_list[i_ep, i_k, i_lr, n] = res['Acc']
+                    sensitivity_list[i_ep, i_k, i_lr, n] = res['Sens']
+                    specificity_list[i_ep, i_k, i_lr, n] = res['Spec']
+                    precision_list[i_ep, i_k, i_lr, n] = res['Prec']
+                    loss_list[i_ep, i_k, i_lr, n] = res['Loss']
+
+        print("\nFinished Scanning!                                                \n")
+
+    res = {
+        'Acc List': np.mean(accuracy_list, axis=3),
+        'Sens List': np.mean(sensitivity_list, axis=3),
+        'Spec List': np.mean(specificity_list, axis=3),
+        'Prec List': np.mean(precision_list, axis=3),
+        'Loss List': np.mean(loss_list, axis=3),
     }
 
     return res

@@ -23,7 +23,6 @@ if __name__ == '__main__':
     patterns = pd.read_csv(dataset_path+'/iono_trainPatt.csv', header=0, index_col=0)
     patterns = patterns.to_numpy()
     patterns = patterns.dot(pc_mat)
-    patterns = NN.sigmoid(patterns) #normalize the data with a sigmoid function
     labels = pd.read_csv(dataset_path+'/iono_trainLab.csv', header=0, index_col=0)
     labels = np.ravel(labels.to_numpy())
     label0 = 'b'
@@ -41,12 +40,14 @@ if __name__ == '__main__':
     print('Good signals:', good)
     print('Bad signals:', bad)
     
-    epoch_step = 1
-    epoch_range = range(1, 101, epoch_step)
+    n_iter = 100
+    epoch_step = 2
+    epoch_range = range(1, 103, epoch_step)
     k_range = range(2, 11, 1)
-    lr_range = np.arange(1e-4, 1e-3, 1e-4)
+    lr_range = np.arange(1e-3, 1e-2, 1e-3)
 
-    res = NN.NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, label1)
+    # res = NN.NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, label1)
+    res = NN.NN_binary_scanner_iter(n_iter, epoch_range, k_range, lr_range, patterns, labels, label0, label1)
     
     if not os.path.exists(script_directory+f'/NN PCA'):
         os.makedirs(script_directory+f'/NN PCA')

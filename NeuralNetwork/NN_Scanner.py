@@ -19,7 +19,6 @@ if __name__ == '__main__':
 
     patterns = pd.read_csv(dataset_path+'/iono_trainPatt.csv', header=0, index_col=0)
     patterns = patterns.to_numpy()
-    # patterns = NN.sigmoid(patterns) #normalize the data with a sigmoid function
     labels = pd.read_csv(dataset_path+'/iono_trainLab.csv', header=0, index_col=0)
     labels = np.ravel(labels.to_numpy())
     label0 = 'b'
@@ -37,17 +36,14 @@ if __name__ == '__main__':
     print('Good signals:', good)
     print('Bad signals:', bad)
     
-    epoch_step = 500
-    epoch_range = range(3000, 5000, epoch_step)
-    k_range = range(3, 8, 1)
-    # lr_range = np.logspace(start = -5, stop = -1, num = 5)
-    lr_range = np.arange(1e-4, 1e-3, 0.5e-4)
+    n_iter = 100
+    epoch_step = 2
+    epoch_range = range(1, 103, epoch_step)
+    k_range = range(2, 11, 1)
+    lr_range = np.arange(1e-3, 1e-2, 1e-3)
 
-    # epoch_range = range(1, 101, epoch_step)
-    # k_range = range(2, 11, 1)
-    # lr_range = np.arange(1e-4, 1e-3, 1e-4)
-
-    res = NN.NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, label1, from_scratch=True)
+    # res = NN.NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, label1)
+    res = NN.NN_binary_scanner_iter(n_iter, epoch_range, k_range, lr_range, patterns, labels, label0, label1)
     
     if not os.path.exists(script_directory+f'/NN Not PCA'):
         os.makedirs(script_directory+f'/NN Not PCA')
@@ -70,7 +66,7 @@ if __name__ == '__main__':
 
         sens_colormesh = NN.heatmap_plotter(ax[0], lr_range, epoch_range, sens[:,i,:], '{:.2f}', "Sensitivity", 'Learning Rate', 'Number of epochs', normalization, cm.viridis)
         spec_colormesh = NN.heatmap_plotter(ax[1], lr_range, epoch_range, spec[:,i,:], '{:.2f}', "Specificity", 'Learning Rate', 'Number of epochs', normalization, cm.viridis)
-        
+              
         fig.suptitle(f'{k}-Fold')
         fig.colorbar(spec_colormesh,  orientation='vertical')
         fig.savefig(script_directory+f'/NN Not PCA/score_heatmaps/heatmap_{k}_fold.png', dpi=240)
@@ -151,7 +147,7 @@ ax2[1].set_ylim(0, 1.1)
 ax2[1].set_title('Specificity')
 
 ax2[1].set_xlabel('Epochs')
-fig2.suptitle(f'Metrics: {k_range[0]}-folds, {lr_range[0]:0.5f} LR')
+fig2.suptitle(f'Metrics: {k_range[0]}-folds, {lr_range[0]:0.3e} LR')
 
 axSlide_k2 = fig2.add_axes([0.05, 0.05, 0.05, 0.4])
 kSlide2 = Slider(ax = axSlide_k2, label = "Number of folds", valmin=k_range[0], valmax=k_range[-1], valstep = 1, valinit=k_range[0], orientation='vertical')
@@ -177,7 +173,7 @@ def update_metrics_2(val):
     ax2[1].set_title('Specificity')
 
     ax2[1].set_xlabel('Epochs')
-    fig2.suptitle(f'Metrics: {k_range[i_k]}-folds, {lr_range[i_lr]:0.1e} LR')
+    fig2.suptitle(f'Metrics: {k_range[i_k]}-folds, {lr_range[i_lr]:0.3e} LR')
 
     fig2.canvas.draw_idle()
 
@@ -204,9 +200,9 @@ fig3.suptitle(f'Loss in Training: {k_range[0]} Folds')
 
 axSlide_k3 = fig3.add_axes([0.93, 0.05, 0.05, 0.4])
 kSlide3 = Slider(ax = axSlide_k3, label = "Number of folds", valmin=k_range[0], valmax=k_range[-1], valstep = 1, valinit=k_range[0], orientation='vertical')
-axSlide_lr3 = fig3.add_axes([0.04, 0.05, 0.05, 0.4])
+axSlide_lr3 = fig3.add_axes([0.04, 0.55, 0.05, 0.4])
 lrSlide3 = Slider(ax = axSlide_lr3, label = "Learning Rate", valmin=0, valmax=len(lr_range)-1, valstep = 1, valinit=0, orientation='vertical')
-axSlide_ep3 = fig3.add_axes([0.04, 0.55, 0.05, 0.4])
+axSlide_ep3 = fig3.add_axes([0.04, 0.05, 0.05, 0.4])
 epSlide3 = Slider(ax = axSlide_ep3, label = "Number of epochs", valmin=epoch_range[0], valmax=epoch_range[-1], valstep = epoch_step, valinit=epoch_range[0], orientation='vertical')
 
 def update_loss(val):
