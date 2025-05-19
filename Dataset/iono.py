@@ -15,6 +15,10 @@ import torch
   
 start_cpu = clock.process_time()
 
+script_directory = os.path.dirname(os.path.abspath(__file__))
+mother_directory = os.path.dirname(script_directory)
+dataset_path = os.path.join(mother_directory, 'Dataset')
+
 # fetch dataset 
 ionosphere = fetch_ucirepo(id=52) 
   
@@ -102,18 +106,18 @@ print('Numbers of principal components:', n_vec)
 df_corr = pd.DataFrame(data = corr)
 df_eval = pd.DataFrame(data = e_val)
 df_evec = pd.DataFrame(data = e_vec[:, :n_vec])
-df_corr.to_csv('corrMatrix.csv', sep = ',')
-df_eval.to_csv('eigenvalues.csv', sep = ',')
-df_evec.to_csv('eigenvectors.csv', sep = ',')
+df_corr.to_csv(script_directory+'/corrMatrix.csv', sep = ',')
+df_eval.to_csv(script_directory+'/eigenvalues.csv', sep = ',')
+df_evec.to_csv(script_directory+'/eigenvectors.csv', sep = ',')
 
 df_trainPatt = pd.DataFrame(data = patt_train)
 df_trainLab = pd.DataFrame(data = lab_train)
 df_extPatt = pd.DataFrame(data = patt_ext)
 df_extLab = pd.DataFrame(data = lab_ext)
-df_trainPatt.to_csv('iono_trainPatt.csv', sep = ',')
-df_trainLab.to_csv('iono_trainLab.csv', sep = ',')
-df_extPatt.to_csv('iono_extPatt.csv', sep = ',')
-df_extLab.to_csv('iono_extLab.csv', sep = ',')
+df_trainPatt.to_csv(script_directory+'/iono_trainPatt.csv', sep = ',')
+df_trainLab.to_csv(script_directory+'/iono_trainLab.csv', sep = ',')
+df_extPatt.to_csv(script_directory+'/iono_extPatt.csv', sep = ',')
+df_extLab.to_csv(script_directory+'/iono_extLab.csv', sep = ',')
 
 print("CPU Time:" + str(round((clock.process_time() - start_cpu)/60)) + "'" + str(round((clock.process_time() - start_cpu)%60)) + "''")
 
