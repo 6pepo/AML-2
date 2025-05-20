@@ -14,6 +14,8 @@ import RandomForest.RF_Library as RF
 import torch
 
 from matplotlib.widgets import Slider
+from sklearn.preprocessing import StandardScaler
+from scipy.linalg import eigh
   
 start_cpu = clock.process_time()
 
@@ -118,8 +120,10 @@ for i, lab in enumerate(labels):
             bad_e += 1
 
 print(f'Good signal: {good_t+good_e}, Bad signal: {bad_t+bad_e}')
+
 corr = np.corrcoef(patt_train, rowvar=False)    
-e_val, e_vec = RF.torch_eig(corr, var_type=torch.float32)
+# e_val, e_vec = RF.torch_eig(corr, var_type=torch.float32)
+e_val, e_vec = eigh(corr)
 e_val = np.real(e_val)  #we cast to real because they have null imaginary part
 e_vec = np.real(e_vec)
 
@@ -134,19 +138,19 @@ perc_tresh = 0.9            # Threshold of features at wich we cut
 principal_components = np.zeros(len(e_val))
 cum_percentage = np.zeros(len(e_val))
 print('\nPercent\tCumulative')
-for i,val in enumerate(e_val):
+for i, val in enumerate(e_val):
     val_sum += val
     print(round(val/e_val_sum * 100, 2), '%\t', np.round(val_sum/e_val_sum * 100, 2), '%')
     principal_components[i] = i+1
     cum_percentage[i] = np.round(val_sum/e_val_sum * 100, 2)
-    if val_sum/e_val_sum > perc_tresh:
+    if val_sum/e_val_sum > perc_tresh and n_vec==0:
         n_vec = i+1
-        break
+        print('Threshold reached!')
 
 fig1, ax1 = plt.subplots()
 ax1.plot(principal_components,cum_percentage,'bo--' )
-ax1.hlines(cum_percentage[9], 0,16, colors='red')
-ax1.plot(principal_components[9], cum_percentage[9], 'ro')
+ax1.hlines(cum_percentage[n_vec-1], 0,16, colors='red')
+ax1.plot(principal_components[n_vec-1], cum_percentage[n_vec-1], 'ro')
 ax1.set_xlabel('N° Principal Compones')
 ax1.set_ylabel('Cumulative Percentage')
 ax1.grid(True)

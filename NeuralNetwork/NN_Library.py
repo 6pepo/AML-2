@@ -1034,7 +1034,7 @@ def NN_parameters_scanner(k, par_all, par_range, patterns, labels, label0, label
     return 0
 
 def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=None, precision=None, title=None):
-    fig, ax = plt.subplots(figsize=(16,9))
+    fig, ax = plt.subplots()
     if title == None:
         ax.set_title("Confusion matrix")
     else:
@@ -1119,9 +1119,6 @@ def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=N
 
 def gaussian(x,a,mean,sigma):
     return a*np.exp(-((x-mean)**2/(sigma**2))/2)
-
-def sigmoid(x):
-    return 1/(1+np.exp(-x))
 
 def hp_mode(mu1,mu2):
     if mu1 < mu2:
@@ -1216,7 +1213,7 @@ def squared_error(pred, target):
     return (pred - target)**2
 
 def step_squared_error(pred, target):
-    return 2*(pred - target)  * pred*(1-pred)
+    return (pred - target) * pred*(1-pred)
 
 def perceptron_loss(pred, target):
     return abs(pred - target)
@@ -1229,7 +1226,7 @@ def heavside(x):
 
 class neuron:
 
-    def __init__(self, labneg, labpos, max_epochs, learning_rate, tol = 1e-6, loss = 'squaredError', random_state = None):
+    def __init__(self, labneg, labpos, max_epochs, learning_rate, tol = 1e-3, loss = 'squaredError', random_state = None):
         self.labneg = labneg
         self.labpos = labpos
         self.epochs = max_epochs
@@ -1258,15 +1255,14 @@ class neuron:
         self.train_lab = np.where(target == self.labpos, 1., 0.)
         self.weights = np.empty(self.n_feat)
         for i in range(self.n_feat):
-            self.weights[i] = (random.random() - 0.5)* self.lr
-        self.bias = (random.random() - 0.5)* self.lr
+            self.weights[i] = 2*random.random() - 1
         
         self.loss_list = []
         self.conv_counter = 0
 
         for i in range(self.epochs):
             # Forward Propagation
-            self.weighted_sum = self.weights.dot(self.train_patt.transpose() + self.bias)
+            self.weighted_sum = self.weights.dot(self.train_patt.transpose())
             self.temp_pred = self.activ(self.weighted_sum)
             self.epoch_loss = 0.
 
@@ -1279,7 +1275,6 @@ class neuron:
                 self.step = self.d_cost(tpred, self.train_lab[k])
                 for j in range(self.n_feat):
                     self.weights[j] -= self.lr * self.step * self.train_patt[k, j]
-                self.bias -= self.lr * self.step
 
             # Convergence Check
             if self.conv_counter < 5 and i>0:
@@ -1294,5 +1289,5 @@ class neuron:
             self.loss_list.append(self.epoch_loss)
 
     def predict(self, patterns):
-        return np.where(self.activ(self.weights.dot(patterns.transpose()) + self.bias) > 0.5, self.labpos, self.labneg) 
+        return np.where(self.activ(self.weights.dot(patterns.transpose())) > 0.5, self.labpos, self.labneg) 
 

@@ -7,6 +7,7 @@ import os
 
 from matplotlib import cm, colors
 from matplotlib.widgets import Slider
+from sklearn.preprocessing import StandardScaler
 
 
 if __name__ == '__main__':
@@ -23,6 +24,10 @@ if __name__ == '__main__':
     labels = np.ravel(labels.to_numpy())
     label0 = 'b'
     label1 = 'g'
+
+    # Normalizing features
+    scaler = StandardScaler()
+    patterns = scaler.fit_transform(patterns)
 
     good = 0
     bad = 0
@@ -61,6 +66,7 @@ if __name__ == '__main__':
     normalization = colors.Normalize(vmin=np.min(scores), vmax=np.max(scores))
     loss_norm = colors.Normalize(vmin=np.min(loss), vmax=np.max(loss))
 
+    # Plots k-lr heatmap at last epoch
     fig, ax = plt.subplots((1,2), figsize=(16,9))
 
     sens_colormesh = NN.heatmap_plotter(ax[0], k_range, lr_range, sens[-1,:,:], '{:.2f}', "Sensitivity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)

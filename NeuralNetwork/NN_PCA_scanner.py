@@ -7,6 +7,7 @@ import os
 
 from matplotlib import cm, colors
 from matplotlib.widgets import Slider
+from sklearn.preprocessing import StandardScaler
 
 
 if __name__ == '__main__':
@@ -27,6 +28,10 @@ if __name__ == '__main__':
     labels = np.ravel(labels.to_numpy())
     label0 = 'b'
     label1 = 'g'
+
+    # Normalizing features
+    scaler = StandardScaler()
+    patterns = scaler.fit_transform(patterns)
 
     good = 0
     bad = 0
@@ -65,16 +70,27 @@ if __name__ == '__main__':
     normalization = colors.Normalize(vmin=np.min(scores), vmax=np.max(scores))
     loss_norm = colors.Normalize(vmin=np.min(loss), vmax=np.max(loss))
 
-    for i,k in enumerate(k_range):
-        fig, ax = plt.subplots(1,2, figsize=(16,9))
+    # Plots k-lr heatmap at last epoch
+    fig, ax = plt.subplots((1,2), figsize=(16,9))
 
-        sens_colormesh = NN.heatmap_plotter(ax[0], lr_range, epoch_range, sens[:,i,:], '{:.2f}', "Sensitivity", 'Learning Rate', 'Number of epochs', normalization, cm.viridis)
-        spec_colormesh = NN.heatmap_plotter(ax[1], lr_range, epoch_range, spec[:,i,:], '{:.2f}', "Specificity", 'Learning Rate', 'Number of epochs', normalization, cm.viridis)
+    sens_colormesh = NN.heatmap_plotter(ax[0], k_range, lr_range, sens[-1,:,:], '{:.2f}', "Sensitivity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)
+    spec_colormesh = NN.heatmap_plotter(ax[0], k_range, lr_range, spec[-1,:,:], '{:.2f}', "Specificity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)
+
+    fig.suptitle(f' Epoch {epoch_range[-1]}')
+    fig.colorbar(spec_colormesh, orientation='vertical')
+    fig.savefig(script_directory+f'/NN Not PCA/score_heatmaps/heatmap_{epoch_range[-1]}_epoch.png', dpi=240)
+    plt.close(fig)
+
+    for i,k in enumerate(k_range):
+        # fig, ax = plt.subplots(1,2, figsize=(16,9))
+
+        # sens_colormesh = NN.heatmap_plotter(ax[0], lr_range, epoch_range, sens[:,i,:], '{:.2f}', "Sensitivity", 'Learning Rate', 'Number of epochs', normalization, cm.viridis)
+        # spec_colormesh = NN.heatmap_plotter(ax[1], lr_range, epoch_range, spec[:,i,:], '{:.2f}', "Specificity", 'Learning Rate', 'Number of epochs', normalization, cm.viridis)
         
-        fig.suptitle(f'{k}-Fold')
-        fig.colorbar(spec_colormesh,  orientation='vertical')
-        fig.savefig(script_directory+f'/NN PCA/score_heatmaps/heatmap_{k}_fold.png', dpi=240)
-        plt.close(fig)
+        # fig.suptitle(f'{k}-Fold')
+        # fig.colorbar(spec_colormesh,  orientation='vertical')
+        # fig.savefig(script_directory+f'/NN PCA/score_heatmaps/heatmap_{k}_fold.png', dpi=240)
+        # plt.close(fig)
                 
         fig_loss, ax_loss = plt.subplots( figsize=(16,9))
 

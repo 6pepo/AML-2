@@ -10,6 +10,7 @@ import os
 from matplotlib import cm, colors
 from tqdm import tqdm
 from scipy.optimize import curve_fit
+from sklearn.preprocessing import StandardScaler
 
 def h_line(x,c):
     return np.ones(len(x))*c
@@ -35,22 +36,28 @@ if __name__ == '__main__':
 	epoch_PCA = 93
 
 	# Training Set
-	train_patterns = pd.read_csv(dataset_path+"/iono_trainPatt.csv", header=0, index_col=0)
+	orig_train_patterns = pd.read_csv(dataset_path+"/iono_trainPatt.csv", header=0, index_col=0)
 	train_labels = pd.read_csv(dataset_path+"/iono_trainLab.csv", header=0, index_col=0)
 
-	train_patterns = train_patterns.to_numpy()
+	orig_train_patterns = orig_train_patterns.to_numpy()
 	train_labels = train_labels.to_numpy().ravel()
 	label0 = 'b'
 	label1 = 'g'
 
 	# External test Set
-	ext_patterns = pd.read_csv(dataset_path+"/iono_extPatt.csv", header=0, index_col=0)
+	orig_ext_patterns = pd.read_csv(dataset_path+"/iono_extPatt.csv", header=0, index_col=0)
 	ext_labels = pd.read_csv(dataset_path+"/iono_extLab.csv", header=0, index_col=0)
 
-	ext_patterns = ext_patterns.to_numpy()
-	ext_labels = ext_labels.to_numpy().ravel()
+	orig_ext_patterns = orig_ext_patterns.to_numpy()
+	ext_labels = ext_labels.to_numpy().ravel() 
 
-	#NOT PCA
+	# NOT PCA
+	# Normalizing features
+	scaler = StandardScaler()
+	scaler.fit(orig_train_patterns)
+	train_patterns = scaler.transform(orig_train_patterns)
+	ext_patterns = scaler.transform(orig_ext_patterns)
+
 	acc_list = []
 	sens_list = []
 	spec_list = []
@@ -194,8 +201,14 @@ if __name__ == '__main__':
 	#PCA 
 	pc_mat = pd.read_csv(dataset_path+"/eigenvectors.csv", sep=',', index_col=0)
 	pc_mat = pc_mat.to_numpy(dtype=np.float32)
-	train_patterns = train_patterns.dot(pc_mat)
-	ext_patterns = ext_patterns.dot(pc_mat)
+	train_patterns = orig_train_patterns.dot(pc_mat)
+	ext_patterns = orig_ext_patterns.dot(pc_mat)
+
+	# Normalizing Features
+	PCA_scaler = StandardScaler()
+	PCA_scaler.fit(train_patterns)
+	train_patterns = PCA_scaler.transform(train_labels)
+	ext_patterns = PCA_scaler.transform(ext_patterns)
 
 	acc_list = []                   #CV metrics
 	sens_list = []
