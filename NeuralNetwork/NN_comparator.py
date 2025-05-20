@@ -22,17 +22,17 @@ if __name__ == '__main__':
 	mother_directory = os.path.dirname(script_directory)
 	dataset_path = os.path.join(mother_directory, 'Dataset')
 
-	n_iter = 10
+	n_iter = 100
 
 	# Iperparameters non-PCA
-	k = 5
-	lr = 1e-2
-	epoch = 4000
+	k = 7
+	lr = 5e-3
+	epoch = 99
 
 	# Iperparameters PCA
 	k_PCA = 5
-	lr_PCA = 1e-2
-	epoch_PCA = 4000
+	lr_PCA = 5e-3
+	epoch_PCA = 93
 
 	# Training Set
 	train_patterns = pd.read_csv(dataset_path+"/iono_trainPatt.csv", header=0, index_col=0)
@@ -78,8 +78,8 @@ if __name__ == '__main__':
 	cpu_time_non_pca = []
 
 	for n in range(n_iter):
-		# res = NN.NN_binary_kfold(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
-		res = NN.NN_binary_kfold_neuron(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
+		res = NN.NN_binary_kfold(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
+		# res = NN.NN_binary_kfold_neuron(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
 
 		acc_list.append(res['Acc'])
 		sens_list.append(res['Sens'])
@@ -224,8 +224,8 @@ if __name__ == '__main__':
 	cpu_time_pca = []
 
 	for n in range(n_iter):
-		# res = NN.NN_binary_kfold(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
-		res = NN.NN_binary_kfold_neuron(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
+		res = NN.NN_binary_kfold(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
+		# res = NN.NN_binary_kfold_neuron(lr, k, epoch, train_patterns, train_labels, label0, label1, n, ext_patterns, ext_labels)
 
 		acc_list.append(res['Acc'])
 		sens_list.append(res['Sens'])
@@ -472,9 +472,9 @@ if __name__ == '__main__':
 	popt_not_pca, pcov_not_pca = curve_fit(h_line, iterations,cpu_time_non_pca, maxfev=10000)
 	popt_pca, pcov_pca = curve_fit(h_line, iterations,cpu_time_pca, maxfev=10000)
 
-	time_ax.plot(iterations, cpu_time_non_pca, 'rx', label=f'NOT PCA:{popt_not_pca[0]:.2f} s')
+	time_ax.plot(iterations, cpu_time_non_pca, 'rx', label=f'NOT PCA:{popt_not_pca[0]:.5f} s')
 	time_ax.hlines(popt_not_pca[0], 0, n_iter, colors='red', linestyles='dashed')
-	time_ax.plot(iterations, cpu_time_pca, 'bo', label=f'PCA:{popt_pca[0]:.2f} s')
+	time_ax.plot(iterations, cpu_time_pca, 'bo', label=f'PCA:{popt_pca[0]:.5f} s')
 	time_ax.hlines(popt_pca[0], 0, n_iter, colors='blue', linestyles='dashed')
 	time_ax.set_xlabel('Iteration')
 	time_ax.set_ylabel('CPU Time (s)')

@@ -47,8 +47,6 @@ def RF_binary_kfold(n_trees, k, patterns, labels, label0, label1, iter = 0, ext_
         test_pattern = patterns[test_index]
         test_labels = labels[test_index]
 
-
-
         model = ens.RandomForestClassifier(n_estimators=n_trees, 
                                                criterion='gini',
                                                max_depth=None,

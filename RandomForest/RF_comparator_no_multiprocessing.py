@@ -25,12 +25,12 @@ if __name__ == '__main__':
 	n_iter = 100
 
 	# Iperparameters non-PCA
-	k = 5
-	n_trees = 210
+	k = 4
+	n_trees = 110
 
 	# Iperparameters PCA
 	k_PCA = 6
-	n_trees_PCA = 210
+	n_trees_PCA = 80
 
 	# Training Set
 	train_patterns = pd.read_csv(dataset_path+"/iono_trainPatt.csv", header=0, index_col=0)
@@ -498,9 +498,9 @@ if __name__ == '__main__':
 	popt_not_pca, pcov_not_pca = curve_fit(h_line, iterations,cpu_time_non_pca, maxfev=10000)
 	popt_pca, pcov_pca = curve_fit(h_line, iterations,cpu_time_pca, maxfev=10000)
 
-	time_ax.plot(iterations, cpu_time_non_pca, 'rx', label=f'NOT PCA:{popt_not_pca[0]:.2f} s')
+	time_ax.plot(iterations, cpu_time_non_pca, 'rx', label=f'NOT PCA:{popt_not_pca[0]:.5f} s')
 	time_ax.hlines(popt_not_pca[0], 0, n_iter, colors='red', linestyles='dashed')
-	time_ax.plot(iterations, cpu_time_pca, 'bo', label=f'PCA:{popt_pca[0]:.2f} s')
+	time_ax.plot(iterations, cpu_time_pca, 'bo', label=f'PCA:{popt_pca[0]:.5f} s')
 	time_ax.hlines(popt_pca[0], 0, n_iter, colors='blue', linestyles='dashed')
 	time_ax.set_xlabel('Iteration')
 	time_ax.set_ylabel('CPU Time (s)')

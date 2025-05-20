@@ -12,6 +12,8 @@ import numpy as np
 import time as clock
 import RandomForest.RF_Library as RF
 import torch
+
+from matplotlib.widgets import Slider
   
 start_cpu = clock.process_time()
 
@@ -35,19 +37,54 @@ for i,rows in enumerate(x.values):
 
 labels = y.to_numpy().ravel()
 
+good_indexes = np.argwhere(labels == 'g')
+good_signals = signal[good_indexes]
+bad_signals = np.delete(signal, good_indexes, axis=0)
+
 fig, ax = plt.subplots(1,2)
-ax[0].plot(signal[0].real, label=f'{labels[0]} Real Part')
-ax[0].plot(signal[0].imag, label=f'{labels[0]} Imaginary Part')
+ax[0].plot(good_signals[0].real, label=f'Real Part')
+ax[0].plot(good_signals[0].imag, label=f'Imaginary Part')
+ax[0].plot(np.abs(good_signals[0]), label=f'Absolute Value')
 ax[0].grid(True)
+ax[0].set_title(f"Good Signal {0}")
 ax[0].legend()
 
-ax[1].plot(signal[1].real, label=f'{labels[1]} Real Part')
-ax[1].plot(signal[1].imag, label=f'{labels[1]} Imaginary Part')
+ax[1].plot(bad_signals[0].real, label=f'Real Part')
+ax[1].plot(bad_signals[0].imag, label=f'Imaginary Part')
+ax[1].plot(np.abs(bad_signals[0]), label=f'Absolute Value')
 ax[1].grid(True)
+ax[1].set_title(f"Bad Signal {0}")
 ax[1].legend()
 
-labels = y.to_numpy().ravel()
-print(labels)
+goodSlide = fig.add_axes([0.04, 0.05, 0.05, 0.75])
+goodSlider = Slider(ax = goodSlide, label = "Good Signal", valmin=0, valmax=len(good_signals)-1, valstep = 1, valinit=0, orientation='vertical')
+badSlide = fig.add_axes([0.93, 0.05, 0.05, 0.75])
+badSlider = Slider(ax = badSlide, label = "Bad Signal", valmin=0, valmax=len(bad_signals)-1, valstep = 1, valinit=0, orientation='vertical')
+
+def update(val):
+    igood = int(goodSlider.val)
+    ibad = int(badSlider.val)
+
+    ax[0].clear()
+    ax[0].plot(signal[igood].real, label=f'Real Part')
+    ax[0].plot(signal[igood].imag, label=f'Imaginary Part')
+    ax[0].plot(np.abs(signal[igood]), label=f'Absolute Value')
+    ax[0].grid(True)
+    ax[0].set_title(f"Good Signal {igood}")
+    ax[0].legend()
+
+    ax[1].clear()
+    ax[1].plot(signal[ibad].real, label=f'Real Part')
+    ax[1].plot(signal[ibad].imag, label=f'Imaginary Part')
+    ax[1].plot(np.abs(signal[ibad]), label=f'Absolute Value')
+    ax[1].grid(True)
+    ax[1].set_title(f"Bad Signal {ibad}")
+    ax[1].legend()
+
+    fig.canvas.draw_idle()
+
+goodSlider.on_changed(update)
+badSlider.on_changed(update)
 
 # Picking first 50 good and 50 bad patterns for training, the rest is for External Testing
 ntrain = 100
@@ -80,6 +117,7 @@ for i, lab in enumerate(labels):
             lab_ext[good_e + bad_e] = lab
             bad_e += 1
 
+print(f'Good signal: {good_t+good_e}, Bad signal: {bad_t+bad_e}')
 corr = np.corrcoef(patt_train, rowvar=False)    
 e_val, e_vec = RF.torch_eig(corr, var_type=torch.float32)
 e_val = np.real(e_val)  #we cast to real because they have null imaginary part
@@ -93,13 +131,25 @@ e_val_sum = np.sum(e_val)
 val_sum = 0
 n_vec = 0
 perc_tresh = 0.9            # Threshold of features at wich we cut
+principal_components = np.zeros(len(e_val))
+cum_percentage = np.zeros(len(e_val))
 print('\nPercent\tCumulative')
 for i,val in enumerate(e_val):
     val_sum += val
     print(round(val/e_val_sum * 100, 2), '%\t', np.round(val_sum/e_val_sum * 100, 2), '%')
+    principal_components[i] = i+1
+    cum_percentage[i] = np.round(val_sum/e_val_sum * 100, 2)
     if val_sum/e_val_sum > perc_tresh:
         n_vec = i+1
         break
+
+fig1, ax1 = plt.subplots()
+ax1.plot(principal_components,cum_percentage,'bo--' )
+ax1.hlines(cum_percentage[9], 0,16, colors='red')
+ax1.plot(principal_components[9], cum_percentage[9], 'ro')
+ax1.set_xlabel('N° Principal Compones')
+ax1.set_ylabel('Cumulative Percentage')
+ax1.grid(True)
 
 print('Numbers of principal components:', n_vec)
 
