@@ -23,11 +23,6 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
     start = clock.process_time()  
     models = []
 
-    patterns = sigmoid(patterns) #normalize the data with a sigmoid function
-    if np.any(ext_patt != None):
-        ext_patt = sigmoid(ext_patt)
-
-
     # Metrics of single folds
     fold_accuracy = []
     fold_sensitivity = []
