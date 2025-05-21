@@ -305,7 +305,7 @@ def NN_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext
 
     return res
 
-def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext_patt = None, ext_lab = None):
+def Neuron_binary_kfold(lr, k, n_ep, patterns, labels, label0, label1, iter = 0, ext_patt = None, ext_lab = None):
     start = clock.process_time()  
     models = []
 
@@ -345,7 +345,7 @@ def NN_binary_kfold_neuron(lr, k, n_ep, patterns, labels, label0, label1, iter =
         model.fit(train_pattern, train_labels)
         models.append(model)
 
-        fold_loss.append(model.epoch_loss)
+        fold_loss.append(model.loss_list)
 
         # Internal test
         test_prediction = model.predict(test_pattern)
@@ -568,54 +568,50 @@ def worker(input, output):
         result = func(*args)
         output.put(result)
 
-def NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, label1, ext_patt = None, ext_lab = None, from_scratch=False):
-    len_ep = len(epoch_range)
+def Neuron_binary_scanner(n_iter, max_epoch, k_range, lr_range, patterns, labels, label0, label1, ext_patt = None, ext_lab = None):
     len_k = len(k_range)
     len_lr = len(lr_range)
 
-    accuracy_list = np.empty((len_ep, len_k, len_lr))
-    sensitivity_list = np.empty((len_ep, len_k, len_lr))
-    specificity_list = np.empty((len_ep, len_k, len_lr))
-    precision_list = np.empty((len_ep, len_k, len_lr))
-    loss_list = np.empty((len_ep, len_k, len_lr))
+    accuracy_list = np.empty((len_k, len_lr, n_iter))
+    sensitivity_list = np.empty((len_k, len_lr, n_iter))
+    specificity_list = np.empty((len_k, len_lr, n_iter))
+    precision_list = np.empty((len_k, len_lr, n_iter))
+    loss_list = np.empty((len_k, len_lr, n_iter, max_epoch))
 
     print("Begin Scanning...")
 
-    tot_iter = len_ep*len_k*len_lr
+    tot_iter = len_k * len_lr * n_iter
     progress = tqdm(total=tot_iter)
     iter = 0
 
     for i_lr, val_lr in enumerate(lr_range):
-        for i_ep, n_ep in enumerate(epoch_range):
-            for i_k, k in enumerate(k_range):
-                iter += 1
-                
+        for i_k, k in enumerate(k_range):
+            for iter in range(n_iter):
                 # Progress bar
-                progress.set_description(f"Epoch: {n_ep} | Fold: {i_k+1}/{len_k} | Learning Rate: {val_lr:0.3e}")
+                progress.set_description(f"Fold: {i_k+1}/{len_k} | Learning Rate: {val_lr:0.3e} | Iteration: {iter+1}\{n_iter}")
                 progress.update(1)
-                
-                # print("N_trees: ", n_trees, "\tN_fold: ", k, "\tIteration: ", iter, "/", tot_iter,end='\r')     #Python 3.x
-                # print("N_trees: {}\tN_fold: {}\tIteration: {}/{} \r".format(n_trees, k, iter, tot_iter)),       #Python 2.x
 
-                if from_scratch == True:
-                    res = NN_binary_kfold_neuron(val_lr, k, n_ep, patterns, labels, label0, label1)
-                if from_scratch == False:
-                    res = NN_binary_kfold(val_lr, k, n_ep, patterns, labels, label0, label1)
+                res = Neuron_binary_kfold(val_lr, k, max_epoch, patterns, labels, label0, label1)
 
-                accuracy_list[i_ep, i_k, i_lr] = res['Acc']
-                sensitivity_list[i_ep, i_k, i_lr] = res['Sens']
-                specificity_list[i_ep, i_k, i_lr] = res['Spec']
-                precision_list[i_ep, i_k, i_lr] = res['Prec']
-                loss_list[i_ep, i_k, i_lr] = res['Loss']
+                accuracy_list[i_k, i_lr, iter] = res['Acc']
+                sensitivity_list[i_k, i_lr, iter] = res['Sens']
+                specificity_list[i_k, i_lr, iter] = res['Spec']
+                precision_list[i_k, i_lr, iter] = res['Prec']
+                loss_list[i_k, i_lr, iter, :] = res['Loss']
 
     print("\nFinished Scanning!                                                \n")
 
     res = {
-        'Acc List': accuracy_list,
-        'Sens List': sensitivity_list,
-        'Spec List': specificity_list,
-        'Prec List': precision_list,
-        'Loss List': loss_list,
+        'Acc List': np.mean(accuracy_list, axis=2),
+        'Acc Std List': np.std(accuracy_list, axis=2),
+        'Sens List': np.mean(sensitivity_list, axis=2),
+        'Sens Std List': np.std(sensitivity_list, axis=2),
+        'Spec List': np.mean(specificity_list, axis=2),
+        'Spec Std List': np.std(specificity_list, axis=2),
+        'Prec List': np.mean(precision_list, axis=2),
+        'Prec Std List': np.std(precision_list, axis=2),
+        'Loss List': np.mean(loss_list, axis=2),
+        'Loss Std List': np.std(loss_list, axis=2)
     }
 
     return res
@@ -649,7 +645,7 @@ def NN_binary_scanner_iter(iter, epoch_range, k_range, lr_range, patterns, label
                     # print("N_trees: {}\tN_fold: {}\tIteration: {}/{} \r".format(n_trees, k, iter, tot_iter)),       #Python 2.x
 
                     if from_scratch == True:
-                        res = NN_binary_kfold_neuron(val_lr, k, n_ep, patterns, labels, label0, label1)
+                        res = Neuron_binary_kfold(val_lr, k, n_ep, patterns, labels, label0, label1)
                     if from_scratch == False:
                         res = NN_binary_kfold(val_lr, k, n_ep, patterns, labels, label0, label1)
 
