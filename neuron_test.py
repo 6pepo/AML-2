@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import RF_Library as ML
+import NeuralNetwork.NN_Library as ML
 import time as clock
 import os
 
