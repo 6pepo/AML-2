@@ -655,7 +655,7 @@ def NN_binary_scanner_iter(iter, epoch_range, k_range, lr_range, patterns, label
                     precision_list[i_ep, i_k, i_lr, n] = res['Prec']
                     loss_list[i_ep, i_k, i_lr, n] = res['Loss']
 
-        print("\nFinished Scanning!                                                \n")
+    print("\nFinished Scanning!                                                \n")
 
     res = {
         'Acc List': np.mean(accuracy_list, axis=3),
@@ -663,6 +663,11 @@ def NN_binary_scanner_iter(iter, epoch_range, k_range, lr_range, patterns, label
         'Spec List': np.mean(specificity_list, axis=3),
         'Prec List': np.mean(precision_list, axis=3),
         'Loss List': np.mean(loss_list, axis=3),
+        'Acc Std List': np.std(accuracy_list, axis=3),
+        'Sens Std List': np.std(sensitivity_list, axis=3),
+        'Spec Std List': np.std(specificity_list, axis=3),
+        'Prec Std List': np.std(precision_list, axis=3),
+        'Loss Std List': np.std(loss_list, axis=3),
     }
 
     return res

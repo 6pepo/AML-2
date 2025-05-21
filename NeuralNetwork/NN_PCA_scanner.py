@@ -67,6 +67,9 @@ if __name__ == '__main__':
     sens = res['Sens List']
     spec = res['Spec List']
     loss = res['Loss List']
+    sens_std = res['Sens Std List']
+    spec_std = res['Spec Std List']
+    loss_std = res['Loss Std List']
     scores = np.concatenate((sens, spec), axis = 0)
     normalization = colors.Normalize(vmin=np.min(scores), vmax=np.max(scores))
     loss_norm = colors.Normalize(vmin=np.min(loss), vmax=np.max(loss))
@@ -75,14 +78,14 @@ if __name__ == '__main__':
     fig, ax = plt.subplots(1, 2, figsize=(16,9))
 
     sens_colormesh = NN.heatmap_plotter(ax[0], k_range, lr_range, sens[-1,:,:], '{:.2f}', "Sensitivity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)
-    spec_colormesh = NN.heatmap_plotter(ax[0], k_range, lr_range, spec[-1,:,:], '{:.2f}', "Specificity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)
+    spec_colormesh = NN.heatmap_plotter(ax[1], k_range, lr_range, spec[-1,:,:], '{:.2f}', "Specificity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)
 
     ax[0].set_yscale('log')
     ax[1].set_yscale('log')
 
     fig.suptitle(f' Epoch {epoch_range[-1]}')
     fig.colorbar(spec_colormesh, orientation='vertical')
-    fig.savefig(script_directory+f'/NN Not PCA/score_heatmaps/heatmap_{epoch_range[-1]}_epoch.png', dpi=240)
+    fig.savefig(script_directory+f'/NN PCA/score_heatmaps/heatmap_{epoch_range[-1]}_epoch.png', dpi=240)
     plt.close(fig)
 
     for i,k in enumerate(k_range): 
@@ -103,14 +106,14 @@ if __name__ == '__main__':
     fig1, ax1 = plt.subplots(2, 1, sharex=True, figsize=(16,9))
     # fig1.subplots_adjust(0.2, 0.2)
     ax1[0].scatter(lr_range, sens[0,0,:], color='C1')
-    ax1[0].errorbar(lr_range, sens[0,0,:], yerr=np.std(sens[0,0,:]), color='C1')
+    ax1[0].errorbar(lr_range, sens[0,0,:], yerr=sens_std[0,0,:], color='C1')
     ax1[0].grid(True)
     ax1[0].set_ylim(0, 1.1)
     ax1[0].set_title('Sensitivity')
     ax1[0].set_xscale('log')
 
     ax1[1].scatter(lr_range, spec[0,0,:], color='C2')
-    ax1[1].errorbar(lr_range, spec[0,0,:], yerr=np.std(spec[0,0,:]), color='C2')
+    ax1[1].errorbar(lr_range, spec[0,0,:], yerr=spec_std[0,0,:], color='C2')
     ax1[1].grid(True)
     ax1[1].set_ylim(0, 1.1)
     ax1[1].set_title('Specificity')
@@ -130,7 +133,7 @@ def update_metrics_1(val):
 
     ax1[0].clear()
     ax1[0].scatter(lr_range, sens[i_ep,i_k,:], color='C1')
-    ax1[0].errorbar(lr_range, sens[i_ep,i_k,:], yerr=np.std(sens[i_ep,i_k,:]), color='C1')
+    ax1[0].errorbar(lr_range, sens[i_ep,i_k,:], yerr=sens_std[i_ep,i_k,:], color='C1')
     ax1[0].grid(True)
     ax1[0].set_ylim(0, 1.1)
     ax1[0].set_title('Sensitivity')
@@ -138,7 +141,7 @@ def update_metrics_1(val):
 
     ax1[1].clear()
     ax1[1].scatter(lr_range, spec[i_ep,i_k,:], color='C2')
-    ax1[1].errorbar(lr_range, spec[i_ep,i_k,:], yerr=np.std(spec[i_ep,i_k,:]), color='C2')
+    ax1[1].errorbar(lr_range, spec[i_ep,i_k,:], yerr=spec_std[i_ep,i_k,:], color='C2')
     ax1[1].grid(True)
     ax1[1].set_ylim(0, 1.1)
     ax1[1].set_title('Specificity')
@@ -155,13 +158,13 @@ epSlide.on_changed(update_metrics_1)
 fig2, ax2 = plt.subplots(2, 1, sharex=True, figsize=(16,9))
 # fig2.subplots_adjust(0.2, 0.2)
 ax2[0].scatter(epoch_range, sens[:,0,0], color='C1')
-ax2[0].errorbar(epoch_range, sens[:,0,0], yerr=np.std(sens[:,0,0]), color='C1')
+ax2[0].errorbar(epoch_range, sens[:,0,0], yerr=sens_std[:,0,0], color='C1')
 ax2[0].grid(True)
 ax2[0].set_ylim(0, 1.1)
 ax2[0].set_title('Sensitivity')
 
 ax2[1].scatter(epoch_range, spec[:,0,0], color='C2')
-ax2[1].errorbar(epoch_range, spec[:,0,0], yerr=np.std(sens[:,0,0]), color='C2')
+ax2[1].errorbar(epoch_range, spec[:,0,0], yerr=sens_std[:,0,0], color='C2')
 ax2[1].grid(True)
 ax2[1].set_ylim(0, 1.1)
 ax2[1].set_title('Specificity')
@@ -180,14 +183,14 @@ def update_metrics_2(val):
 
     ax2[0].clear()
     ax2[0].scatter(epoch_range, sens[:,i_k,i_lr], color='C1')
-    ax2[0].errorbar(epoch_range, sens[:,i_k,i_lr], yerr=np.std(sens[:,i_k,i_lr]), color='C1')
+    ax2[0].errorbar(epoch_range, sens[:,i_k,i_lr], yerr=sens_std[:,i_k,i_lr], color='C1')
     ax2[0].grid(True)
     ax2[0].set_ylim(0, 1.1)
     ax2[0].set_title('Sensitivity')
 
     ax2[1].clear()
     ax2[1].scatter(epoch_range, spec[:,i_k,i_lr], color='C2')
-    ax2[1].errorbar(epoch_range, spec[:,i_k,i_lr], yerr=np.std(spec[:,i_k,i_lr]), color='C2')
+    ax2[1].errorbar(epoch_range, spec[:,i_k,i_lr], yerr=spec_std[:,i_k,i_lr], color='C2')
     ax2[1].grid(True)
     ax2[1].set_ylim(0, 1.1)
     ax2[1].set_title('Specificity')
@@ -203,19 +206,20 @@ lrSlide.on_changed(update_metrics_2)
 fig3, ax3 = plt.subplots(2, 1, figsize=(16,9))
 fig3.subplots_adjust(hspace=0.5)
 ax3[0].plot(epoch_range, loss[:,0,0], color='C1')
-# ax3[0].errorbar(epoch_range, loss[:,0,0], yerr=np.std(loss[:,0,0]), color='C1')
+ax3[0].errorbar(epoch_range, loss[:,0,0], yerr=loss_std[:,0,0], color='C1')
 ax3[0].grid(True)
 ax3[0].set_ylim(np.min(loss[:,0,0]) - np.min(loss[:,0,0])/5, np.max(loss[:,0,0]) + np.max(loss[:,0,0])/5)
 ax3[0].set_title(f'Loss at {lr_range[0]:0.1e} LR')
 ax3[0].set_xlabel('Epochs')
 
 ax3[1].plot(lr_range, loss[0,0,:], color='C2')
-# ax3[1].errorbar(lr_range, loss[i_ep,i_k,:], yerr=np.std(loss[i_ep,i_k,:]), color='C2')
+ax3[1].errorbar(lr_range, loss[0,0,:], yerr=loss_std[0,0,:], color='C2')
 ax3[1].grid(True)
 ax3[1].set_ylim(np.min(loss[0,0,:]) - np.min(loss[0,0,:])/5 , np.max(loss[0,0,:]) + np.max(loss[0,0,:])/5)
 ax3[1].set_title(f'Loss at {epoch_range[0]} epochs')
 ax3[1].set_xlabel('Learning Rate')
 ax3[1].set_xscale('log')
+ax3[1].set_yscale('log')
 
 fig3.suptitle(f'Loss in Training: {k_range[0]} Folds')
 
@@ -233,7 +237,7 @@ def update_loss(val):
 
     ax3[0].clear()
     ax3[0].plot(epoch_range, loss[:,i_k,i_lr], color='C1')
-    # ax3[0].errorbar(epoch_range, loss[:,i_k,i_lr], yerr=np.std(loss[:,i_k,i_lr]), color='C1')
+    ax3[0].errorbar(epoch_range, loss[:,i_k,i_lr], yerr=loss_std[:,i_k,i_lr], color='C1')
     ax3[0].grid(True)
     ax3[0].set_ylim(np.min(loss[:,i_k,i_lr]) - np.min(loss[:,i_k,i_lr])/5, np.max(loss[:,i_k,i_lr]) + np.max(loss[:,i_k,i_lr])/5)
     ax3[0].set_title(f'Loss at {lr_range[i_lr]:0.1e} LR')
@@ -241,11 +245,12 @@ def update_loss(val):
 
     ax3[1].clear()
     ax3[1].plot(lr_range, loss[i_ep,i_k,:], color='C2')
-    # ax3[1].errorbar(lr_range, loss[i_ep,i_k,:], yerr=np.std(loss[i_ep,i_k,:]), color='C2')
+    ax3[1].errorbar(lr_range, loss[i_ep,i_k,:], yerr=loss_std[i_ep,i_k,:], color='C2')
     ax3[1].grid(True)
     ax3[1].set_ylim(np.min(loss[i_ep,i_k,:]) - np.min(loss[i_ep,i_k,:])/5 , np.max(loss[i_ep,i_k,:]) + np.max(loss[i_ep,i_k,:])/5)
     ax3[1].set_title(f'Loss at {epoch_range[i_ep]} epochs')
     ax3[1].set_xlabel('Learning Rate')
+    ax3[1].set_xscale('log')
     ax3[1].set_yscale('log')
 
     fig3.suptitle(f'Loss in Training: {k_range[i_k]} Folds')

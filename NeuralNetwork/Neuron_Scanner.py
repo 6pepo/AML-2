@@ -60,15 +60,18 @@ if __name__ == '__main__':
     if not os.path.exists(script_directory+f'/Neuron Not PCA/loss_heatmaps'):
         os.makedirs(script_directory+f'/Neuron Not PCA/loss_heatmaps')
     
-    scores = np.concatenate((res['Sens List'], res['Spec List']), axis = 0)
+    sens = res['Sens List']
+    spec = res['Spec List']
+    loss = res['Loss List']
+    scores = np.concatenate((sens, spec), axis = 0)
     normalization = colors.Normalize(vmin=np.min(scores), vmax=np.max(scores))
-    loss_norm = colors.Normalize(vmin=np.min(res['Loss List']), vmax=np.max(res['Loss List']))
+    loss_norm = colors.Normalize(vmin=np.min(loss), vmax=np.max(loss))
 
     # Plots k-lr heatmap at last epoch
     fig, ax = plt.subplots((1,2), figsize=(16,9))
 
-    sens_colormesh = NN.heatmap_plotter(ax[0], k_range, lr_range, res['Sens List'], '{:.2f}', "Sensitivity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)
-    spec_colormesh = NN.heatmap_plotter(ax[0], k_range, lr_range, res['Spec List'], '{:.2f}', "Specificity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)
+    sens_colormesh = NN.heatmap_plotter(ax[0], k_range, lr_range, sens, '{:.2f}', "Sensitivity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)
+    spec_colormesh = NN.heatmap_plotter(ax[0], k_range, lr_range, spec, '{:.2f}', "Specificity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)
 
     if from_scratch:
         ax[0].set_yscale('log')
@@ -82,7 +85,7 @@ if __name__ == '__main__':
     for i,k in enumerate(k_range):
         fig_loss, ax_loss = plt.subplots( figsize=(16,9))
 
-        loss_colormesh = NN.heatmap_plotter(ax_loss, lr_range, range(max_epoch)+1, res['Loss List'][i,:,:], '{:.1e}', 'Loss', 'Learning Rate', 'Number of epochs', loss_norm, cm.viridis )
+        loss_colormesh = NN.heatmap_plotter(ax_loss, lr_range, range(max_epoch)+1, loss[i,:,:], '{:.1e}', 'Loss', 'Learning Rate', 'Number of epochs', loss_norm, cm.viridis )
         
         if from_scratch:
             ax_loss.set_xscale('log')
