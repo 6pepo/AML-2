@@ -49,7 +49,8 @@ if __name__ == '__main__':
     epoch_step = 2
     epoch_range = range(1, 103, epoch_step)
     k_range = range(2, 11, 1)
-    lr_range = np.arange(1e-3, 1e-2, 1e-3)
+    # lr_range = np.arange(1e-3, 1e-2, 1e-3)
+    lr_range = np.logspace(-4, 0, 9)
 
     # res = NN.NN_binary_scanner(epoch_range, k_range, lr_range, patterns, labels, label0, label1)
     res = NN.NN_binary_scanner_iter(n_iter, epoch_range, k_range, lr_range, patterns, labels, label0, label1)
@@ -71,30 +72,25 @@ if __name__ == '__main__':
     loss_norm = colors.Normalize(vmin=np.min(loss), vmax=np.max(loss))
 
     # Plots k-lr heatmap at last epoch
-    fig, ax = plt.subplots((1,2), figsize=(16,9))
+    fig, ax = plt.subplots(1, 2, figsize=(16,9))
 
     sens_colormesh = NN.heatmap_plotter(ax[0], k_range, lr_range, sens[-1,:,:], '{:.2f}', "Sensitivity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)
     spec_colormesh = NN.heatmap_plotter(ax[0], k_range, lr_range, spec[-1,:,:], '{:.2f}', "Specificity", 'Number of Folds', 'Learning Rate', normalization, cm.viridis)
+
+    ax[0].set_yscale('log')
+    ax[1].set_yscale('log')
 
     fig.suptitle(f' Epoch {epoch_range[-1]}')
     fig.colorbar(spec_colormesh, orientation='vertical')
     fig.savefig(script_directory+f'/NN Not PCA/score_heatmaps/heatmap_{epoch_range[-1]}_epoch.png', dpi=240)
     plt.close(fig)
 
-    for i,k in enumerate(k_range):
-        # fig, ax = plt.subplots(1,2, figsize=(16,9))
-
-        # sens_colormesh = NN.heatmap_plotter(ax[0], lr_range, epoch_range, sens[:,i,:], '{:.2f}', "Sensitivity", 'Learning Rate', 'Number of epochs', normalization, cm.viridis)
-        # spec_colormesh = NN.heatmap_plotter(ax[1], lr_range, epoch_range, spec[:,i,:], '{:.2f}', "Specificity", 'Learning Rate', 'Number of epochs', normalization, cm.viridis)
-        
-        # fig.suptitle(f'{k}-Fold')
-        # fig.colorbar(spec_colormesh,  orientation='vertical')
-        # fig.savefig(script_directory+f'/NN PCA/score_heatmaps/heatmap_{k}_fold.png', dpi=240)
-        # plt.close(fig)
-                
+    for i,k in enumerate(k_range): 
         fig_loss, ax_loss = plt.subplots( figsize=(16,9))
 
         loss_colormesh = NN.heatmap_plotter(ax_loss, lr_range, epoch_range, loss[:,i,:], '{:.1e}', 'Loss', 'Learning Rate', 'Number of epochs', loss_norm, cm.viridis )
+
+        ax_loss.set_xscale('log')
 
         fig_loss.suptitle(f'{k}-Fold')
         fig_loss.colorbar(loss_colormesh,  orientation='vertical')
@@ -111,12 +107,14 @@ if __name__ == '__main__':
     ax1[0].grid(True)
     ax1[0].set_ylim(0, 1.1)
     ax1[0].set_title('Sensitivity')
+    ax1[0].set_xscale('log')
 
     ax1[1].scatter(lr_range, spec[0,0,:], color='C2')
     ax1[1].errorbar(lr_range, spec[0,0,:], yerr=np.std(spec[0,0,:]), color='C2')
     ax1[1].grid(True)
     ax1[1].set_ylim(0, 1.1)
     ax1[1].set_title('Specificity')
+    ax1[1].set_xscale('log')
 
     ax1[1].set_xlabel('Learning rate')
     fig1.suptitle(f'Metrics: {k_range[0]}-folds, {epoch_range[0]} epochs')
@@ -136,6 +134,7 @@ def update_metrics_1(val):
     ax1[0].grid(True)
     ax1[0].set_ylim(0, 1.1)
     ax1[0].set_title('Sensitivity')
+    ax1[0].set_xscale('log')
 
     ax1[1].clear()
     ax1[1].scatter(lr_range, spec[i_ep,i_k,:], color='C2')
@@ -143,6 +142,7 @@ def update_metrics_1(val):
     ax1[1].grid(True)
     ax1[1].set_ylim(0, 1.1)
     ax1[1].set_title('Specificity')
+    ax1[1].set_xscale('log')
 
     ax1[1].set_xlabel('Learning rate')
     fig1.suptitle(f'Metrics: {k_range[i_k]}-folds, {epoch_range[i_ep]} epochs')
@@ -214,7 +214,8 @@ ax3[1].plot(lr_range, loss[0,0,:], color='C2')
 ax3[1].grid(True)
 ax3[1].set_ylim(np.min(loss[0,0,:]) - np.min(loss[0,0,:])/5 , np.max(loss[0,0,:]) + np.max(loss[0,0,:])/5)
 ax3[1].set_title(f'Loss at {epoch_range[0]} epochs')
-ax3[1].set_xlabel('Learning Range')
+ax3[1].set_xlabel('Learning Rate')
+ax3[1].set_xscale('log')
 
 fig3.suptitle(f'Loss in Training: {k_range[0]} Folds')
 
@@ -244,7 +245,8 @@ def update_loss(val):
     ax3[1].grid(True)
     ax3[1].set_ylim(np.min(loss[i_ep,i_k,:]) - np.min(loss[i_ep,i_k,:])/5 , np.max(loss[i_ep,i_k,:]) + np.max(loss[i_ep,i_k,:])/5)
     ax3[1].set_title(f'Loss at {epoch_range[i_ep]} epochs')
-    ax3[1].set_xlabel('Learning Range')
+    ax3[1].set_xlabel('Learning Rate')
+    ax3[1].set_yscale('log')
 
     fig3.suptitle(f'Loss in Training: {k_range[i_k]} Folds')
 

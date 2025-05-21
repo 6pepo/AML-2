@@ -207,7 +207,7 @@ if __name__ == '__main__':
 	# Normalizing Features
 	PCA_scaler = StandardScaler()
 	PCA_scaler.fit(train_patterns)
-	train_patterns = PCA_scaler.transform(train_labels)
+	train_patterns = PCA_scaler.transform(train_patterns)
 	ext_patterns = PCA_scaler.transform(ext_patterns)
 
 	acc_list = []                   #CV metrics

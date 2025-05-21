@@ -636,10 +636,10 @@ def NN_binary_scanner_iter(iter, epoch_range, k_range, lr_range, patterns, label
     tot_iter = len_ep*len_k*len_lr*iter
     progress = tqdm(total=tot_iter)
 
-    for n in range(iter):
-        for i_lr, val_lr in enumerate(lr_range):
-            for i_ep, n_ep in enumerate(epoch_range):
-                for i_k, k in enumerate(k_range):
+    for i_lr, val_lr in enumerate(lr_range):
+        for i_ep, n_ep in enumerate(epoch_range):
+            for i_k, k in enumerate(k_range):
+                for n in range(iter):
                     
                     # Progress bar
                     progress.set_description(f"Iteration: {n}/{iter} | Epoch: {n_ep} | Fold: {i_k+1}/{len_k} | Learning Rate: {val_lr:0.3e}")
@@ -1047,12 +1047,14 @@ def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=N
             conf_mat[i,j] = round(conf_mat[i,j], 2)
 
     tot = conf_mat[0][0]+conf_mat[0][1]+conf_mat[1][0]+conf_mat[1][1]
+    orig_pos = conf_mat[0][0] + conf_mat[1][0]
+    orig_neg = conf_mat[0][1] + conf_mat[1][1]
     if precision == None:
         precision = conf_mat[0][0] / (conf_mat[0][0]+conf_mat[0][1])
     if sensitivity == None:
-        sensitivity = conf_mat[0][0] / (conf_mat[0][0]+conf_mat[1][0])
+        sensitivity = conf_mat[0][0] / (orig_pos)
     if specificity == None:
-        specificity = conf_mat[1][1] / (conf_mat[1][1]+conf_mat[0][1])
+        specificity = conf_mat[1][1] / (orig_neg)
     if accuracy == None:
         accuracy = (conf_mat[0][0] + conf_mat[1][1]) / tot
     F1score = 2. * (precision * sensitivity) / (precision + sensitivity)
@@ -1086,16 +1088,16 @@ def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=N
     table[0,3].visible_edges = 'BTR'
 
     table.add_cell(1,1, width = 0.2, height = 0.2, text=f'Total\n\n{tot}', loc='center', fontproperties = fontproperties)
-    table.add_cell(1,2, width = 0.3, height = 0.2, text=f'Positive\n\n{(conf_mat[0][0]+conf_mat[1][0])/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
-    table.add_cell(1,3, width = 0.3, height = 0.2, text=f'Negative\n\n{(conf_mat[0][1]+conf_mat[1][1])/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
+    table.add_cell(1,2, width = 0.3, height = 0.2, text=f'Positive\n\n{(orig_pos)/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
+    table.add_cell(1,3, width = 0.3, height = 0.2, text=f'Negative\n\n{(orig_neg)/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
 
     table.add_cell(2,0, width = 0.1, height = 0.3, text='Classifier', loc='center', fontproperties = fontproperties, facecolor = 'white')
     table[2,0].set_text_props(rotation = 'vertical')
     table[2,0].visible_edges = 'LTR'
     table.add_cell(2,1, width = 0.2, height = 0.3, text=f'Positive\n\n{(conf_mat[0][0]+conf_mat[0][1])/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
-    table.add_cell(2,2, width = 0.3, height = 0.3, text=f'{conf_mat[0][0]/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[1])
+    table.add_cell(2,2, width = 0.3, height = 0.3, text=f'{conf_mat[0][0]/orig_pos:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[1])
     table[2,2].set_text_props(c = text_color[0][0])
-    table.add_cell(2,3, width = 0.3, height = 0.3, text=f'{conf_mat[0][1]/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[2])
+    table.add_cell(2,3, width = 0.3, height = 0.3, text=f'{conf_mat[0][1]/orig_neg:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[2])
     table[2,3].set_text_props(c = text_color[0][1])
     table.add_cell(2,4, width = 0.2, height = 0.3, text=f'Precision\n\n{precision:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
 
@@ -1103,9 +1105,9 @@ def confMat_binary_plot(conf_mat, accuracy=None, sensitivity=None, specificity=N
     table[3,0].set_text_props(rotation = 'vertical')
     table[3,0].visible_edges = 'BLR'
     table.add_cell(3,1, width = 0.2, height = 0.3, text=f'Negative\n\n{(conf_mat[1][0]+conf_mat[1][1])/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = 'white')
-    table.add_cell(3,2, width = 0.3, height = 0.3, text=f'{conf_mat[1][0]/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[3])
+    table.add_cell(3,2, width = 0.3, height = 0.3, text=f'{conf_mat[1][0]/orig_pos:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[3])
     table[3,2].set_text_props(c = text_color[1][0])
-    table.add_cell(3,3, width = 0.3, height = 0.3, text=f'{conf_mat[1][1]/tot:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[4])
+    table.add_cell(3,3, width = 0.3, height = 0.3, text=f'{conf_mat[1][1]/orig_neg:.2%}', loc='center', fontproperties = fontproperties, facecolor = cell_color[4])
     table[3,3].set_text_props(c = text_color[1][1])
     table.add_cell(3,4, width = 0.2, height = 0.3)
 
